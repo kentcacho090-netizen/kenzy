@@ -10,6 +10,7 @@ import './home-button-effects.css';
 import './ai-polish';
 import './ai-paste-upload';
 import './polish.css';
+import './mobile-theme-fix.css';
 
 const root = createRoot(document.getElementById('root'));
 root.render(
