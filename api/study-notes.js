@@ -11,6 +11,8 @@ const PPT_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
+const FAST_MODEL = 'gemini-3.5-flash-lite';
+const FILE_MODEL = 'gemini-3.7-flash';
 
 async function readPrivateBlob(pathname) {
   const { get } = await import('@vercel/blob');
@@ -39,19 +41,19 @@ const SYSTEM = [
 
 function outputLimit(action, hasFiles) {
   const text = String(action || '').toLowerCase();
-  if (hasFiles || text.includes('import')) return 4000;
-  if (text.includes('summar')) return 1800;
-  if (text.includes('simplif')) return 2400;
-  return 2800;
+  if (hasFiles || text.includes('import')) return 3000;
+  if (text.includes('summar')) return 1400;
+  if (text.includes('simplif')) return 1800;
+  return 2200;
 }
 
 async function callGemini(apiKey, prompt, files, action) {
   const parts = files.map((file) => ({ inlineData: { mimeType: file.mimeType, data: file.data } }));
   parts.push({ text: prompt });
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 50000);
+  const timeout = setTimeout(() => controller.abort(), 45000);
   try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${FAST_MODEL}:generateContent`, {
       method: 'POST', signal: controller.signal,
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
@@ -87,19 +89,15 @@ async function callGeminiFilesApi(apiKey, prompt, files, action) {
         config: { mimeType: file.mimeType, displayName: file.name || 'kenzy-note-source' },
       });
       let status = item;
-      for (let attempt = 0; attempt < 12 && status?.state === 'PROCESSING'; attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+      for (let attempt = 0; attempt < 10 && status?.state === 'PROCESSING'; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 350));
         status = await ai.files.get({ name: item.name });
       }
       if (!status?.uri || status?.state !== 'ACTIVE') throw new Error(`Gemini could not finish processing ${file.name || 'the file'}.`);
       uploaded.push(status);
     }
     const contents = createUserContent([...uploaded.map((file) => createPartFromUri(file.uri, file.mimeType)), prompt]);
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
-      contents,
-      config: { maxOutputTokens: outputLimit(action, true), thinkingConfig: { thinkingLevel: 'low' } },
-    });
+    const response = await ai.models.generateContent({ model: FILE_MODEL, contents, config: { maxOutputTokens: outputLimit(action, true), thinkingConfig: { thinkingLevel: 'low' } } });
     if (!response.text) throw new Error('Kenzy received no result from Gemini.');
     return response.text;
   } finally {
@@ -145,7 +143,7 @@ export default async function handler(req, res) {
       `Task: ${action}`,
       title ? `Note title: ${title}` : '',
       content.trim() ? `Current note:\n${content}` : '',
-      files.length ? 'The uploaded file is the primary source. Read it carefully and create accurate, editable study notes. Do not wait for another instruction.' : '',
+      files.length ? 'The uploaded file is the primary source. Read it carefully and create accurate, editable study notes. Preserve the source structure and important details.' : '',
       'Be concise but complete. Finish the requested task in one response.',
     ].filter(Boolean).join('\n\n');
 
