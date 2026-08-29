@@ -22,7 +22,7 @@ function blobToBase64(blob) { return new Promise((resolve, reject) => { const re
 
 function render() {
   const page = document.querySelector('.ai-page');
-  if (!page || page.dataset.workspaceV2 === '1') return;
+  if (!page || page.dataset.workspaceV2 === '1') return false;
   page.dataset.workspaceV2 = '1';
   page.innerHTML = `
     <div class="ai-v2-shell">
@@ -39,10 +39,18 @@ function render() {
     </div>`;
   bind();
   loadConversation(load('kenzy-ai-active-v2', null));
+  return true;
 }
+
 function getConversations() { return load(CONV_KEY, []); }
 function getActive() { return load('kenzy-ai-active-v2', null); }
-function ensureConversation() { const conversations = getConversations(); let activeId = getActive(); let active = conversations.find(c => c.id === activeId); if (!active) { active={id:id(),title:'New chat',messages:[{role:'assistant',content:'Hi! I’m Kenzy. Ask me to explain a topic, build a study plan, or help you understand your study material.'}],updatedAt:Date.now()}; conversations.unshift(active); save(CONV_KEY,conversations); save('kenzy-ai-active-v2',active.id); } return active; }
+function ensureConversation() {
+  const conversations = getConversations();
+  let activeId = getActive();
+  let active = conversations.find(c => c.id === activeId);
+  if (!active) { active={id:id(),title:'New chat',messages:[{role:'assistant',content:'Hi! I’m Kenzy. Ask me to explain a topic, build a study plan, or help you understand your study material.'}],updatedAt:Date.now()}; conversations.unshift(active); save(CONV_KEY,conversations); save('kenzy-ai-active-v2',active.id); }
+  return active;
+}
 function persistConversation(conversation) { const all=getConversations().filter(c=>c.id!==conversation.id); save(CONV_KEY,[conversation,...all].sort((a,b)=>b.updatedAt-a.updatedAt).slice(0,50)); save('kenzy-ai-active-v2',conversation.id); }
 function renderConversations(){const el=document.querySelector('.ai-v2-conversations');if(!el)return;const active=getActive();const rows=getConversations();el.innerHTML=rows.length?rows.map(c=>`<div class="ai-v2-conv ${c.id===active?'active':''}"><button class="ai-v2-conv-open" type="button" data-open="${c.id}"><strong>${escapeHtml(c.title)}</strong><small>${escapeHtml(lastText(c))}</small></button><button class="ai-v2-conv-menu" type="button" data-delete="${c.id}" title="Delete conversation">×</button></div>`).join(''):'<div class="ai-v2-empty">No conversations yet.</div>';el.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>loadConversation(b.dataset.open));el.querySelectorAll('[data-delete]').forEach(b=>b.onclick=e=>{e.stopPropagation();deleteConversation(b.dataset.delete);});}
 function lastText(c){const m=[...c.messages].reverse().find(x=>x.role==='user');return m?.content||'New conversation';}
@@ -54,8 +62,26 @@ function deleteConversation(conversationId){const rows=getConversations().filter
 async function addFiles(fileList){const files=Array.from(fileList||[]);if(!files.length)return;const existing=load(FILE_META_KEY,[]);const existingBytes=existing.reduce((n,f)=>n+f.size,0);const incomingBytes=files.reduce((n,f)=>n+f.size,0);if(existingBytes+incomingBytes>MAX_FILE_BYTES)return alert('Keep your saved AI files under 3 MB total for now.');const allowed=['application/pdf','image/png','image/jpeg','image/webp'];if(files.some(f=>!allowed.includes(f.type)))return alert('Use PDF, PNG, JPG, or WebP files only.');const meta=[...existing];const selected=new Set(load('kenzy-ai-selected-files-v2',[]));for(const file of files){const fileId=id();await putFile({id:fileId,name:file.name,type:file.type,size:file.size,blob:file});meta.unshift({id:fileId,name:file.name,type:file.type,size:file.size,addedAt:Date.now()});selected.add(fileId);}save(FILE_META_KEY,meta.slice(0,30));save('kenzy-ai-selected-files-v2',[...selected].slice(0,10));renderFiles();renderAttachments();}
 async function send(event){event.preventDefault();const ta=document.querySelector('.ai-v2-form textarea');const text=ta?.value.trim();if(!text)return;const conversation=ensureConversation();const selected=load('kenzy-ai-selected-files-v2',[]);const files=[];for(const fid of selected){const f=await getFile(fid);if(f?.blob)files.push({name:f.name,mimeType:f.type,data:await blobToBase64(f.blob)});}conversation.messages.push({role:'user',content:text});if(conversation.title==='New chat')conversation.title=text.length>45?`${text.slice(0,45)}…`:text;conversation.updatedAt=Date.now();persistConversation(conversation);renderConversations();renderMessages(conversation);ta.value='';setBusy(true);try{const response=await fetch('/api/ai-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:conversation.messages.slice(-10),files})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'AI request failed.');conversation.messages.push({role:'assistant',content:data.reply});conversation.updatedAt=Date.now();persistConversation(conversation);renderMessages(conversation);}catch(e){conversation.messages.push({role:'assistant',content:`Sorry, I couldn't answer that. ${e.message||''}`.trim()});persistConversation(conversation);renderMessages(conversation);}finally{setBusy(false);}}
 function setBusy(busy){const btn=document.querySelector('.ai-v2-send');const status=document.querySelector('.ai-v2-status');if(btn){btn.disabled=busy;btn.innerHTML=busy?'Thinking… <span class="ai-v2-mini-spin"></span>':'Send <span>↵</span>';}if(status)status.innerHTML=busy?'<i class="busy"></i> Thinking…':'<i></i> Ready';}
-function bind(){document.querySelector('.ai-v2-new').onclick=()=>{const c={id:id(),title:'New chat',messages:[{role:'assistant',content:'New chat started. What are you studying?'}],updatedAt:Date.now()};save('kenzy-ai-active-v2',c.id);save(CONV_KEY,[c,...getConversations()].slice(0,50));loadConversation(c.id);};document.querySelector('.ai-v2-form').addEventListener('submit',send);const fileInput=document.querySelector('.ai-v2-file-input');if(fileInput)fileInput.addEventListener('change',e=>{addFiles(e.target.files);e.target.value='';});const composeButton=document.querySelector('.ai-v2-attach-button');const composeInput=document.querySelector('.ai-v2-compose-file-input');if(composeButton&&composeInput){composeButton.onclick=()=>composeInput.click();composeInput.addEventListener('change',e=>{addFiles(e.target.files);e.target.value='';});}document.querySelectorAll('[data-quick]').forEach(b=>b.onclick=()=>{const ta=document.querySelector('.ai-v2-form textarea');ta.value=b.dataset.quick;ta.focus();});const ta=document.querySelector('.ai-v2-form textarea');ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();document.querySelector('.ai-v2-form').requestSubmit();}});}
+function bind(){
+  const newChat=document.querySelector('.ai-v2-new'); if(newChat)newChat.onclick=()=>{const c={id:id(),title:'New chat',messages:[{role:'assistant',content:'New chat started. What are you studying?'}],updatedAt:Date.now()};save('kenzy-ai-active-v2',c.id);save(CONV_KEY,[c,...getConversations()].slice(0,50));loadConversation(c.id);};
+  const form=document.querySelector('.ai-v2-form'); if(form)form.addEventListener('submit',send);
+  const fileInput=document.querySelector('.ai-v2-file-input'); if(fileInput)fileInput.addEventListener('change',e=>{addFiles(e.target.files);e.target.value='';});
+  const composeButton=document.querySelector('.ai-v2-attach-button'); const composeInput=document.querySelector('.ai-v2-compose-file-input');
+  if(composeButton&&composeInput){composeButton.onclick=()=>composeInput.click();composeInput.addEventListener('change',e=>{addFiles(e.target.files);e.target.value='';});}
+  document.querySelectorAll('[data-quick]').forEach(b=>b.onclick=()=>{const ta=document.querySelector('.ai-v2-form textarea');if(ta){ta.value=b.dataset.quick;ta.focus();}});
+  const ta=document.querySelector('.ai-v2-form textarea'); if(ta)ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();form?.requestSubmit();}});
+}
 function formatText(text){return escapeHtml(text).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br/>');}
 function escapeHtml(v){return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
 function formatSize(bytes){return bytes<1048576?`${Math.max(1,Math.round(bytes/1024))} KB`:`${(bytes/1048576).toFixed(1)} MB`;}
-let observer;function boot(){if(observer)return;observer=new MutationObserver(render);observer.observe(document.body,{childList:true,subtree:true});render();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+function boot(){
+  if(window.__kenzyAiWorkspaceStarted)return;
+  window.__kenzyAiWorkspaceStarted=true;
+  const tryInit=()=>{
+    const page=document.querySelector('.ai-page');
+    if(page && page.dataset.workspaceV2!=='1') render();
+  };
+  tryInit();
+  setInterval(tryInit,300);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
