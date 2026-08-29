@@ -6,6 +6,7 @@ import './ai-workspace-v2.css';
 import './ai-workspace-v2';
 import './quiz-upgrade.css';
 import './quiz-upgrade';
+import './quiz-ui-cleanup';
 import './home-button-effects.css';
 import './ai-polish';
 import './ai-paste-upload';
