@@ -8,6 +8,7 @@ import './quiz-upgrade.css';
 import './quiz-upgrade';
 import './home-button-effects.css';
 import './ai-polish';
+import './ai-paste-upload';
 
 const root = createRoot(document.getElementById('root'));
 root.render(
