@@ -5,6 +5,7 @@ import './Kenzy.css';
 import './ai-workspace-sidebar.css';
 import './ai-workspace-sidebar';
 import './ai-ux';
+import './upload-hover.css';
 
 const root = createRoot(document.getElementById('root'));
 root.render(
