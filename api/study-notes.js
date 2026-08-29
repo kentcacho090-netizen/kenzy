@@ -51,13 +51,13 @@ async function callGemini(apiKey, prompt, files, action) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 50000);
   try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent', {
       method: 'POST', signal: controller.signal,
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM }] },
         contents: [{ role: 'user', parts }],
-        generationConfig: { maxOutputTokens: outputLimit(action, files.length > 0), temperature: 0.2 },
+        generationConfig: { maxOutputTokens: outputLimit(action, files.length > 0), thinkingConfig: { thinkingLevel: 'low' } },
       }),
     });
     const text = await response.text();
@@ -82,7 +82,10 @@ async function callGeminiFilesApi(apiKey, prompt, files, action) {
   const uploaded = [];
   try {
     for (const file of files) {
-      const item = await ai.files.upload({ file: new Blob([decodeBase64(file.data)], { type: file.mimeType }), config: { mimeType: file.mimeType, displayName: file.name || 'kenzy-note-source' } });
+      const item = await ai.files.upload({
+        file: new Blob([decodeBase64(file.data)], { type: file.mimeType }),
+        config: { mimeType: file.mimeType, displayName: file.name || 'kenzy-note-source' },
+      });
       let status = item;
       for (let attempt = 0; attempt < 12 && status?.state === 'PROCESSING'; attempt += 1) {
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -92,7 +95,11 @@ async function callGeminiFilesApi(apiKey, prompt, files, action) {
       uploaded.push(status);
     }
     const contents = createUserContent([...uploaded.map((file) => createPartFromUri(file.uri, file.mimeType)), prompt]);
-    const response = await ai.models.generateContent({ model: 'gemini-3.6-flash', contents, config: { maxOutputTokens: outputLimit(action, true), temperature: 0.2 } });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.7-flash',
+      contents,
+      config: { maxOutputTokens: outputLimit(action, true), thinkingConfig: { thinkingLevel: 'low' } },
+    });
     if (!response.text) throw new Error('Kenzy received no result from Gemini.');
     return response.text;
   } finally {
