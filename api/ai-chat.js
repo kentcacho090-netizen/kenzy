@@ -1,7 +1,14 @@
 import { get } from '@vercel/blob';
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
-const ALLOWED = new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/webp']);
+const ALLOWED = new Set([
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-powerpoint',
+]);
 
 function approxBytes(data) {
   return Math.floor((data.length * 3) / 4);
@@ -30,13 +37,14 @@ export default async function handler(req, res) {
       if (!process.env.BLOB_READ_WRITE_TOKEN) return res.status(503).json({ error: 'Large uploads are not configured. Connect a Vercel Blob store to this project.' });
       const resolved = [];
       let total = 0;
-      for (const blobFile of blobFiles.slice(0, 4)) {
+      for (const blobFile of blobFiles.slice(0, 8)) {
         const pathname = typeof blobFile?.pathname === 'string' ? blobFile.pathname : '';
-        if (!pathname || !pathname.startsWith('kenzy-material/') || !ALLOWED.has(blobFile.mimeType)) return res.status(400).json({ error: 'One of the large uploaded files is invalid.' });
+        if (!pathname || !pathname.startsWith('kenzy-material/')) return res.status(400).json({ error: 'One of the large uploaded files is invalid.' });
+        if (!ALLOWED.has(blobFile.mimeType)) return res.status(400).json({ error: 'One of the large uploaded files has an unsupported type.' });
         const stored = await blobToBase64(pathname);
         total += stored.size;
         if (total > MAX_UPLOAD_BYTES) return res.status(413).json({ error: 'Attached AI files must stay at or below 25 MB combined.' });
-        resolved.push({ name: blobFile.name, mimeType: blobFile.mimeType || stored.contentType, data: stored.data });
+        resolved.push({ name: blobFile.name, mimeType: blobFile.mimeType, data: stored.data });
         cleanup.push(pathname);
       }
       files = [...files, ...resolved];
@@ -48,14 +56,14 @@ export default async function handler(req, res) {
       .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content.slice(0, 3500) }] }));
 
     if (!clean.some((m) => m.role === 'user')) return res.status(400).json({ error: 'Please enter a question.' });
-    const safeFiles = files.filter((f) => f && ALLOWED.has(f.mimeType) && typeof f.data === 'string' && f.data.length > 0).slice(0, 4);
+    const safeFiles = files.filter((f) => f && ALLOWED.has(f.mimeType) && typeof f.data === 'string' && f.data.length > 0).slice(0, 8);
     const totalBytes = safeFiles.reduce((sum, f) => sum + approxBytes(f.data), 0);
     if (totalBytes > MAX_UPLOAD_BYTES) return res.status(413).json({ error: 'Attached AI files must stay at or below 25 MB combined.' });
 
     const last = clean[clean.length - 1];
     if (safeFiles.length && last?.role === 'user') last.parts.push(...safeFiles.map((f) => ({ inlineData: { mimeType: f.mimeType, data: f.data } })));
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
