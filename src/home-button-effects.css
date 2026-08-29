@@ -2,45 +2,38 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  transition: color .25s ease, transform .2s ease, box-shadow .25s ease, border-color .25s ease;
+  transition: color .25s ease, transform .2s ease, box-shadow .25s ease, border-color .25s ease, background-size .7s cubic-bezier(.2,.8,.2,1);
   background-repeat: no-repeat;
+  background-position: 100% 100%;
 }
 
-/* The circle lives in the button background, so it can never cover the label. */
+/* Expanding radial background: the label stays above the background because this is a background layer, not a pseudo-element. */
 .hero-actions .button.primary {
   color: #fff;
   background-color: #5b55e8;
-  background-image: radial-gradient(circle 0px at 100% 100%, #3f38c8 0, #3f38c8 0, transparent 1px);
-  background-size: 100% 100%;
-  transition: color .25s ease, transform .2s ease, box-shadow .25s ease, background-image .7s cubic-bezier(.2,.8,.2,1);
+  background-image: radial-gradient(circle, #3f38c8 0 68%, transparent 70%);
+  background-size: 0% 0%;
 }
 
 .hero-actions .button.secondary {
   color: var(--text);
   background-color: var(--surface);
-  background-image: radial-gradient(circle 0px at 100% 100%, #5b55e8 0, #5b55e8 0, transparent 1px);
-  background-size: 100% 100%;
-  transition: color .25s ease, transform .2s ease, box-shadow .25s ease, background-image .7s cubic-bezier(.2,.8,.2,1);
+  background-image: radial-gradient(circle, #5b55e8 0 68%, transparent 70%);
+  background-size: 0% 0%;
 }
 
-.hero-actions .button.primary:hover:not(:disabled) {
-  color: #fff;
-  background-image: radial-gradient(circle 180px at 100% 100%, #3f38c8 0, #3f38c8 100%, transparent 101%);
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(63,56,200,.28);
-}
-
+.hero-actions .button.primary:hover:not(:disabled),
 .hero-actions .button.secondary:hover:not(:disabled) {
   color: #fff;
   border-color: #5b55e8;
-  background-image: radial-gradient(circle 180px at 100% 100%, #5b55e8 0, #5b55e8 100%, transparent 101%);
+  background-size: 260% 420%;
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(91,85,232,.22);
+  box-shadow: 0 14px 30px rgba(91,85,232,.24);
 }
 
 .hero-actions .button:active:not(:disabled) { transform: translateY(0) scale(.98); }
 
-/* Keep the upload area clean; the animated sweep belongs to the home actions. */
+/* Keep the upload area clean; the animated effect belongs to the home actions. */
 .upload-box::before { opacity: 0; display: none; }
 .upload-box:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 24px 55px rgba(91,85,232,.17); }
 .upload-box:hover .upload-symbol { transform: none; box-shadow: none; }
