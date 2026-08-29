@@ -1,0 +1,94 @@
+.hero-actions .button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.hero-actions .button::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 190px;
+  height: 190px;
+  left: 100%;
+  top: 100%;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translate(-8px, -8px);
+  transition: top .65s cubic-bezier(.2,.8,.2,1), left .65s cubic-bezier(.2,.8,.2,1), background .2s ease;
+}
+
+.hero-actions .button::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,.16) 45%, transparent 65%);
+  transform: translateX(-130%);
+  transition: transform .65s cubic-bezier(.2,.8,.2,1);
+  pointer-events: none;
+}
+
+.hero-actions .button > *,
+.hero-actions .button {
+  color: inherit;
+}
+
+.hero-actions .button.primary::before {
+  background: #423bd1;
+}
+
+.hero-actions .button.secondary::before {
+  background: var(--accent);
+}
+
+.hero-actions .button.secondary {
+  color: var(--text);
+}
+
+.hero-actions .button:hover:not(:disabled)::before {
+  top: -34px;
+  left: -30px;
+}
+
+.hero-actions .button:hover:not(:disabled)::after {
+  transform: translateX(130%);
+}
+
+.hero-actions .button.primary:hover:not(:disabled),
+.hero-actions .button.primary:hover:not(:disabled) * {
+  color: #fff;
+}
+
+.hero-actions .button.secondary:hover:not(:disabled),
+.hero-actions .button.secondary:hover:not(:disabled) * {
+  color: #fff;
+}
+
+.hero-actions .button:active:not(:disabled)::before {
+  background: #342db5;
+}
+
+/* Keep the upload area clean; the animated sweep belongs to the home actions. */
+.upload-box::before {
+  opacity: 0;
+  display: none;
+}
+
+.upload-box:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 24px 55px rgba(91,85,232,.17);
+}
+
+.upload-box:hover .upload-symbol {
+  transform: none;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-actions .button::before,
+  .hero-actions .button::after {
+    transition: none;
+  }
+}
