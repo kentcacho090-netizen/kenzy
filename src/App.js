@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import './App.css';
 
-const STORAGE_KEY = 'kenzy-quizzes-v1';
+const STORAGE_KEY = 'kenzy-quizzes-v2';
+const THEME_KEY = 'kenzy-theme-v2';
 
 const SAMPLE_QUIZ = {
   id: 'sample',
@@ -14,6 +16,14 @@ const SAMPLE_QUIZ = {
   attempts: []
 };
 
+const GENERATION_STAGES = [
+  { title: 'Uploading your PDF', detail: 'Sending the document securely to Kenzy.' },
+  { title: 'Reading your study material', detail: 'Analyzing the document for useful topics and facts.' },
+  { title: 'Creating questions', detail: 'Building questions and four answer choices.' },
+  { title: 'Checking the quiz', detail: 'Validating the answer format and removing bad questions.' },
+  { title: 'Finishing your quiz', detail: 'Preparing everything for you to start.' }
+];
+
 function loadQuizzes() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -26,15 +36,15 @@ function App() {
   const [page, setPage] = useState('home');
   const [quizzes, setQuizzes] = useState(loadQuizzes);
   const [activeQuiz, setActiveQuiz] = useState(null);
-  const [dark, setDark] = useState(() => localStorage.getItem('kenzy-dark') === 'true');
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'light');
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(quizzes));
   }, [quizzes]);
 
   useEffect(() => {
-    localStorage.setItem('kenzy-dark', String(dark));
-  }, [dark]);
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
 
   function goHome() {
     setActiveQuiz(null);
@@ -53,10 +63,12 @@ function App() {
   }
 
   function finishQuiz(attempt) {
-    setQuizzes((current) => current.map((quiz) => {
-      if (quiz.id !== activeQuiz.id) return quiz;
-      return { ...quiz, attempts: [...(quiz.attempts || []), attempt] };
-    }));
+    if (!activeQuiz) return;
+    setQuizzes((current) => current.map((quiz) => (
+      quiz.id === activeQuiz.id
+        ? { ...quiz, attempts: [...(quiz.attempts || []), attempt] }
+        : quiz
+    )));
     setActiveQuiz({
       ...activeQuiz,
       attempts: [...(activeQuiz.attempts || []), attempt],
@@ -71,15 +83,20 @@ function App() {
   }
 
   return (
-    <div className={dark ? 'app dark' : 'app'}>
+    <div className={theme === 'dark' ? 'app dark' : 'app'}>
       <header className="topbar">
-        <button className="brand" onClick={goHome} aria-label="Go to home">
+        <button className="brand" onClick={goHome} aria-label="Go to Kenzy home">
           <span className="brand-mark">K</span>
           <span>Kenzy</span>
         </button>
         <div className="header-actions">
-          <button className="ghost-icon" onClick={() => setDark((value) => !value)} aria-label="Toggle dark mode">
-            {dark ? '☀' : '☾'}
+          <button
+            className="ghost-icon"
+            onClick={() => setTheme((value) => value === 'dark' ? 'light' : 'dark')}
+            aria-label="Toggle dark mode"
+            title="Toggle dark mode"
+          >
+            {theme === 'dark' ? '☀' : '☾'}
           </button>
           <span className="profile">KC</span>
         </div>
@@ -87,20 +104,17 @@ function App() {
 
       <main>
         {page === 'home' && (
-          <HomePage quizzes={quizzes} onCreate={() => setPage('create')} onManage={() => setPage('manage')} onSample={() => addQuiz({ ...SAMPLE_QUIZ, id: `sample-${Date.now()}` })} />
+          <HomePage
+            quizzes={quizzes}
+            onCreate={() => setPage('create')}
+            onManage={() => setPage('manage')}
+            onSample={() => addQuiz({ ...SAMPLE_QUIZ, id: `sample-${Date.now()}` })}
+          />
         )}
-        {page === 'create' && (
-          <CreatePage onBack={goHome} onCreate={addQuiz} />
-        )}
-        {page === 'quiz' && activeQuiz && (
-          <QuizPage quiz={activeQuiz} onExit={goHome} onFinish={finishQuiz} />
-        )}
-        {page === 'results' && activeQuiz && (
-          <ResultsPage quiz={activeQuiz} onHome={goHome} onRetry={() => setPage('quiz')} />
-        )}
-        {page === 'manage' && (
-          <ManagePage quizzes={quizzes} onBack={goHome} onOpen={startQuiz} onDelete={deleteQuiz} />
-        )}
+        {page === 'create' && <CreatePage onBack={goHome} onCreate={addQuiz} />}
+        {page === 'quiz' && activeQuiz && <QuizPage quiz={activeQuiz} onExit={goHome} onFinish={finishQuiz} />}
+        {page === 'results' && activeQuiz && <ResultsPage quiz={activeQuiz} onHome={goHome} onRetry={() => setPage('quiz')} />}
+        {page === 'manage' && <ManagePage quizzes={quizzes} onBack={goHome} onOpen={startQuiz} onDelete={deleteQuiz} />}
       </main>
 
       <footer>Kenzy · Turn your study material into practice.</footer>
@@ -142,7 +156,7 @@ function HomePage({ quizzes, onCreate, onManage, onSample }) {
             <button className="text-button" onClick={onManage}>View all →</button>
           </div>
           {quizzes.slice(0, 3).map((quiz) => (
-            <button className="recent-row" key={quiz.id} onClick={() => onManage()}>
+            <button className="recent-row" key={quiz.id} onClick={onManage}>
               <span>{quiz.title}</span>
               <small>{quiz.questions.length} questions · {quiz.attempts?.length || 0} attempts</small>
             </button>
@@ -171,6 +185,7 @@ function CreatePage({ onBack, onCreate }) {
   const [minutes, setMinutes] = useState(10);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [stageIndex, setStageIndex] = useState(0);
 
   const MAX_BYTES = 2.7 * 1024 * 1024;
 
@@ -179,6 +194,14 @@ function CreatePage({ onBack, onCreate }) {
     setFile(selected);
     setError(selected && selected.size > MAX_BYTES ? 'Please choose a PDF smaller than 2.7 MB.' : '');
   }
+
+  useEffect(() => {
+    if (!busy) return undefined;
+    const timer = window.setInterval(() => {
+      setStageIndex((value) => Math.min(value + 1, GENERATION_STAGES.length - 1));
+    }, 1800);
+    return () => window.clearInterval(timer);
+  }, [busy]);
 
   async function generateQuiz() {
     if (!file) {
@@ -191,11 +214,13 @@ function CreatePage({ onBack, onCreate }) {
     }
 
     setBusy(true);
+    setStageIndex(0);
     setError('');
 
     try {
       const dataUrl = await fileToDataUrl(file);
       const base64 = dataUrl.split(',')[1] || '';
+      setStageIndex(1);
 
       const response = await fetch('/api/generate-quiz', {
         method: 'POST',
@@ -206,6 +231,8 @@ function CreatePage({ onBack, onCreate }) {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Quiz generation failed.');
 
+      setStageIndex(3);
+
       if (!Array.isArray(data.questions) || data.questions.length === 0) {
         throw new Error('The AI did not return any questions.');
       }
@@ -213,8 +240,10 @@ function CreatePage({ onBack, onCreate }) {
       const safeQuestions = data.questions.filter((question) => (
         question &&
         typeof question.question === 'string' &&
+        question.question.trim() &&
         Array.isArray(question.options) &&
         question.options.length === 4 &&
+        question.options.every((option) => typeof option === 'string' && option.trim()) &&
         Number.isInteger(question.correctIndex) &&
         question.correctIndex >= 0 &&
         question.correctIndex < 4
@@ -222,17 +251,19 @@ function CreatePage({ onBack, onCreate }) {
 
       if (!safeQuestions.length) throw new Error('The AI returned an invalid quiz format.');
 
-      onCreate({
-        id: crypto.randomUUID(),
-        title: file.name.replace(/\.pdf$/i, ''),
-        questions: safeQuestions,
-        timeLimit: minutes,
-        createdAt: new Date().toISOString(),
-        attempts: []
-      });
+      setStageIndex(4);
+      window.setTimeout(() => {
+        onCreate({
+          id: crypto.randomUUID(),
+          title: file.name.replace(/\.pdf$/i, ''),
+          questions: safeQuestions,
+          timeLimit: minutes,
+          createdAt: new Date().toISOString(),
+          attempts: []
+        });
+      }, 450);
     } catch (generationError) {
       setError(generationError.message || 'Could not generate the quiz.');
-    } finally {
       setBusy(false);
     }
   }
@@ -264,7 +295,54 @@ function CreatePage({ onBack, onCreate }) {
         {busy ? 'Generating…' : 'Generate quiz'}
       </button>
       <p className="privacy-note">The PDF is sent to Kenzy’s server endpoint only when you press Generate quiz.</p>
+
+      {busy && <GenerationPanel fileName={file?.name} stageIndex={stageIndex} />}
     </section>
+  );
+}
+
+function GenerationPanel({ fileName, stageIndex }) {
+  const progress = ((stageIndex + 1) / GENERATION_STAGES.length) * 100;
+  return (
+    <div className="generation-overlay" role="status" aria-live="polite">
+      <div className="generation-panel">
+        <div className="generation-header">
+          <div>
+            <div className="eyebrow">KENZY IS WORKING</div>
+            <h3>Building your quiz</h3>
+            <p>{fileName}</p>
+          </div>
+          <div className="ai-orb"><span>✦</span></div>
+        </div>
+
+        <div className="generation-progress"><span style={{ width: `${progress}%` }} /></div>
+
+        <div className="generation-stage-current">
+          <span className="stage-spinner" />
+          <div>
+            <strong>{GENERATION_STAGES[stageIndex].title}</strong>
+            <p>{GENERATION_STAGES[stageIndex].detail}</p>
+          </div>
+        </div>
+
+        <div className="generation-steps">
+          {GENERATION_STAGES.map((stage, index) => {
+            const state = index < stageIndex ? 'complete' : index === stageIndex ? 'active' : 'waiting';
+            return (
+              <div className={`generation-step ${state}`} key={stage.title}>
+                <span>{state === 'complete' ? '✓' : index + 1}</span>
+                <div>
+                  <strong>{stage.title}</strong>
+                  <small>{stage.detail}</small>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="generation-safe-note">Kenzy shows progress stages only. Private model reasoning is never displayed.</div>
+      </div>
+    </div>
   );
 }
 
@@ -404,8 +482,8 @@ function ManagePage({ quizzes, onBack, onOpen, onDelete }) {
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('Could not read that PDF.'));
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('Could not read the PDF on this device.'));
     reader.readAsDataURL(file);
   });
 }
@@ -413,7 +491,7 @@ function fileToDataUrl(file) {
 function formatTime(totalSeconds) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+  return `${minutes}m ${seconds}s`;
 }
 
 export default App;
