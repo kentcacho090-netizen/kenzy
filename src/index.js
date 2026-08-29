@@ -13,6 +13,7 @@ import './ai-paste-upload';
 import './polish.css';
 import './mobile-theme-fix.css';
 import './large-upload';
+import './upload-limit-fix';
 import './notes-stable.css';
 import './notes-stable';
 
