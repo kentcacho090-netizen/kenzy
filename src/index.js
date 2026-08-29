@@ -12,7 +12,7 @@ import './ai-paste-upload';
 import './polish.css';
 import './mobile-theme-fix.css';
 import './large-upload';
-import './upload-25mb-unified';
+import './true-upload-limit';
 import './notes-stable.css';
 import './notes-stable';
 
