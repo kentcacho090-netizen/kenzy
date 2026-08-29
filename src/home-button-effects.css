@@ -2,33 +2,43 @@
   position:relative;
   overflow:hidden;
   isolation:isolate;
-  transition:transform .2s ease,box-shadow .25s ease,color .25s ease,border-color .25s ease,background-position .65s cubic-bezier(.22,.8,.22,1);
+  transition:transform .2s ease,box-shadow .25s ease,color .25s ease,border-color .25s ease,background-position .6s cubic-bezier(.22,.8,.22,1),background-color .25s ease;
   background-repeat:no-repeat;
-  background-size:220% 100%;
-  background-position:100% 0;
 }
 
+/* Create a quiz: purple at rest, clean white on hover. */
 .hero-actions .button.primary{
   color:#fff;
   background-color:#5b55e8;
-  background-image:linear-gradient(110deg,#4038c8 0 48%,transparent 48% 100%);
+  background-image:linear-gradient(100deg,#5b55e8 0%,#5b55e8 50%,#fff 50%,#fff 100%);
+  background-size:200% 100%;
+  background-position:0 0;
+}
+.hero-actions .button.primary:hover:not(:disabled){
+  color:#5b55e8;
+  background-position:100% 0;
+  border-color:#5b55e8;
+  transform:translateY(-2px);
+  box-shadow:0 14px 30px rgba(91,85,232,.22);
 }
 
+/* Ask Kenzy AI: white at rest, purple on hover. */
 .hero-actions .button.secondary{
   color:var(--text);
   background-color:var(--surface);
-  background-image:linear-gradient(110deg,#5b55e8 0 48%,transparent 48% 100%);
+  background-image:linear-gradient(100deg,#5b55e8 0%,#5b55e8 50%,#fff 50%,#fff 100%);
+  background-size:200% 100%;
+  background-position:100% 0;
 }
-
-.hero-actions .button:hover:not(:disabled){
+.hero-actions .button.secondary:hover:not(:disabled){
+  color:#fff;
   background-position:0 0;
+  border-color:#5b55e8;
   transform:translateY(-2px);
-  box-shadow:0 14px 30px rgba(91,85,232,.24);
+  box-shadow:0 14px 30px rgba(91,85,232,.22);
 }
 
-.hero-actions .button.primary:hover:not(:disabled){color:#fff}
-.hero-actions .button.secondary:hover:not(:disabled){color:#fff;border-color:#5b55e8}
-.hero-actions .button:active:not(:disabled){transform:translateY(0) scale(.98)}
+.hero-actions .button:active:not(:disabled){transform:translateY(0) scale(.985)}
 
 /* Keep the upload area clean. */
 .upload-box::before{opacity:0!important;display:none!important}
