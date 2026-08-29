@@ -1,5 +1,16 @@
 const MAX_BYTES = 25 * 1024 * 1024;
-const ALLOWED = new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/webp']);
+const ALLOWED = new Set([
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-powerpoint',
+]);
+const PPT_TYPES = new Set([
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-powerpoint',
+]);
 
 async function readPrivateBlob(pathname) {
   const { get } = await import('@vercel/blob');
@@ -40,7 +51,7 @@ async function callGemini(apiKey, prompt, files, action) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 50000);
   try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', {
       method: 'POST', signal: controller.signal,
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
@@ -81,7 +92,7 @@ async function callGeminiFilesApi(apiKey, prompt, files, action) {
       uploaded.push(status);
     }
     const contents = createUserContent([...uploaded.map((file) => createPartFromUri(file.uri, file.mimeType)), prompt]);
-    const response = await ai.models.generateContent({ model: 'gemini-3.7-flash', contents, config: { maxOutputTokens: outputLimit(action, true), thinkingConfig: { thinkingLevel: 'low' } } });
+    const response = await ai.models.generateContent({ model: 'gemini-3.6-flash', contents, config: { maxOutputTokens: outputLimit(action, true), temperature: 0.2 } });
     if (!response.text) throw new Error('Kenzy received no result from Gemini.');
     return response.text;
   } finally {
@@ -99,8 +110,8 @@ export default async function handler(req, res) {
     const action = typeof body.action === 'string' ? body.action.slice(0, 500) : 'Improve these notes for studying.';
     const title = typeof body.title === 'string' ? body.title.slice(0, 200) : '';
     const content = typeof body.content === 'string' ? body.content.slice(0, 30000) : '';
-    let files = Array.isArray(body.files) ? body.files.filter(Boolean).slice(0, 3) : [];
-    const blobFiles = Array.isArray(body.blobFiles) ? body.blobFiles.filter(Boolean).slice(0, 3) : [];
+    let files = Array.isArray(body.files) ? body.files.filter(Boolean).slice(0, 8) : [];
+    const blobFiles = Array.isArray(body.blobFiles) ? body.blobFiles.filter(Boolean).slice(0, 8) : [];
 
     if (blobFiles.length) {
       if (!process.env.BLOB_READ_WRITE_TOKEN) return res.status(503).json({ error: 'Large note imports need a connected Vercel Blob store.' });
@@ -118,10 +129,10 @@ export default async function handler(req, res) {
       }
     }
 
-    if (files.some((file) => !ALLOWED.has(file.mimeType) || typeof file.data !== 'string' || !file.data)) return res.status(400).json({ error: 'Use PDF, PNG, JPG, or WebP files only.' });
+    if (files.some((file) => !ALLOWED.has(file.mimeType) || typeof file.data !== 'string' || !file.data)) return res.status(400).json({ error: 'Use PDF, PPT, PPTX, JPG, PNG, or WebP files only.' });
     const totalBytes = files.reduce((sum, file) => sum + Math.floor(file.data.length * 0.75), 0);
     if (totalBytes > MAX_BYTES) return res.status(413).json({ error: 'Keep note files at or below 25 MB combined.' });
-    if (!content.trim() && !files.length) return res.status(400).json({ error: 'Write some notes or import a PDF/image first.' });
+    if (!content.trim() && !files.length) return res.status(400).json({ error: 'Write some notes or import a PDF, PowerPoint, or image first.' });
 
     const prompt = [
       `Task: ${action}`,
@@ -131,7 +142,7 @@ export default async function handler(req, res) {
       'Be concise but complete. Finish the requested task in one response.',
     ].filter(Boolean).join('\n\n');
 
-    const result = totalBytes > 3 * 1024 * 1024
+    const result = files.some((file) => PPT_TYPES.has(file.mimeType)) || totalBytes > 3 * 1024 * 1024
       ? await callGeminiFilesApi(apiKey, prompt, files, action)
       : await callGemini(apiKey, prompt, files, action);
     return res.status(200).json({ result });
