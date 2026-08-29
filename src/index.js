@@ -12,6 +12,8 @@ import './ai-paste-upload';
 import './polish.css';
 import './mobile-theme-fix.css';
 import './large-upload';
+import './notes-upgrade.css';
+import './notes-upgrade';
 
 const root = createRoot(document.getElementById('root'));
 root.render(
