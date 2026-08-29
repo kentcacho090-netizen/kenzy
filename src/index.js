@@ -16,6 +16,8 @@ import './true-upload-limit';
 import './presentation-support';
 import './notes-stable.css';
 import './notes-stable';
+import './study-dashboard-polish.css';
+import './study-dashboard-polish';
 
 const root = createRoot(document.getElementById('root'));
 root.render(
