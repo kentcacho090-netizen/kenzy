@@ -4,6 +4,7 @@ import App from './KenzyApp';
 import './Kenzy.css';
 import './ai-workspace-v2.css';
 import './ai-workspace-v2';
+import './ai-upload-limit-fix';
 import './quiz-upgrade.css';
 import './quiz-upgrade';
 import './quiz-ui-cleanup';
