@@ -23,6 +23,22 @@ function safeName(name) {
   return String(name || 'study-material').replace(/[^a-zA-Z0-9._-]+/g, '-').slice(0, 120);
 }
 
+function polishUploadLimitCopy() {
+  document.querySelectorAll('.upload-box small').forEach((node) => {
+    if (node.textContent?.includes('maximum 3 MB combined')) {
+      node.textContent = node.textContent.replace('maximum 3 MB combined', 'maximum 25 MB combined');
+    }
+  });
+  document.querySelectorAll('.error-box').forEach((node) => {
+    if (node.textContent?.includes('under 3 MB')) {
+      node.textContent = node.textContent.replace('under 3 MB', 'at or below 25 MB');
+    }
+  });
+}
+
+polishUploadLimitCopy();
+new MutationObserver(polishUploadLimitCopy).observe(document.body, { childList: true, subtree: true });
+
 // The existing quiz page has an older 3MB client-side guard. For files between
 // 3MB and 25MB, temporarily mask File.size only while that change handler runs.
 // The original size is restored immediately, so the UI still displays the real size.
