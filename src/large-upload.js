@@ -23,6 +23,35 @@ function safeName(name) {
   return String(name || 'study-material').replace(/[^a-zA-Z0-9._-]+/g, '-').slice(0, 120);
 }
 
+// The existing quiz page has an older 3MB client-side guard. For files between
+// 3MB and 25MB, temporarily mask File.size only while that change handler runs.
+// The original size is restored immediately, so the UI still displays the real size.
+document.addEventListener('change', (event) => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement) || input.type !== 'file') return;
+  const files = Array.from(input.files || []);
+  const total = files.reduce((sum, file) => sum + file.size, 0);
+  if (total <= LARGE_UPLOAD_THRESHOLD || total > MAX_UPLOAD_BYTES) return;
+
+  const patched = [];
+  try {
+    for (const file of files) {
+      const originalSize = file.size;
+      Object.defineProperty(file, 'size', { configurable: true, value: Math.min(originalSize, 1024) });
+      patched.push([file, originalSize]);
+    }
+    queueMicrotask(() => {
+      for (const [file] of patched) {
+        try { delete file.size; } catch {}
+      }
+    });
+  } catch {
+    for (const [file] of patched) {
+      try { delete file.size; } catch {}
+    }
+  }
+}, true);
+
 window.fetch = async function largeUploadFetch(input, init = {}) {
   const url = typeof input === 'string' ? input : input?.url || '';
   if (!url.endsWith('/api/generate-quiz') || typeof init.body !== 'string') {
