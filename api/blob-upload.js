@@ -1,14 +1,20 @@
 import { handleUpload } from '@vercel/blob/client';
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
-const ALLOWED = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
+const ALLOWED = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-powerpoint',
+];
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed.' });
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     return res.status(503).json({ error: 'Large uploads are not configured yet. Create a Vercel Blob store and connect its BLOB_READ_WRITE_TOKEN.' });
   }
-
   try {
     const body = req.body || {};
     const response = await handleUpload({
