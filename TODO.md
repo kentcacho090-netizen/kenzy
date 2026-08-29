@@ -1,0 +1,3 @@
+- PDF and image study material uploads
+- 1 to 100 questions
+- Post-quiz answer review
