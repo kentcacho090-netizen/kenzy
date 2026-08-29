@@ -1,9 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
-import './App.css';
-import './navigation.css';
-import './navigation';
+import App from './KenzyApp';
+import './Kenzy.css';
 
 const root = createRoot(document.getElementById('root'));
 root.render(
