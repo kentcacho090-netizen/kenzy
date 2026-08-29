@@ -1,6 +1,16 @@
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
-const ALLOWED = new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/webp']);
-const INLINE_LIMIT_BYTES = 3 * 1024 * 1024;
+const ALLOWED = new Set([
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-powerpoint',
+]);
+const PPT_TYPES = new Set([
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-powerpoint',
+]);
 
 function validFile(file) {
   return file && ALLOWED.has(file.mimeType) && typeof file.data === 'string' && file.data.length > 0;
@@ -14,11 +24,7 @@ function base64Bytes(data) {
 
 async function readPrivateBlob(pathname) {
   const { get } = await import('@vercel/blob');
-  const result = await get(pathname, {
-    access: 'private',
-    token: process.env.BLOB_READ_WRITE_TOKEN,
-    useCache: false,
-  });
+  const result = await get(pathname, { access: 'private', useCache: false });
   if (!result || result.statusCode !== 200 || !result.stream) return null;
   const buffer = Buffer.from(await new Response(result.stream).arrayBuffer());
   return {
@@ -31,11 +37,54 @@ async function readPrivateBlob(pathname) {
 async function deletePrivateBlob(pathname) {
   try {
     const { del } = await import('@vercel/blob');
-    if (typeof del === 'function') {
-      await del(pathname, { token: process.env.BLOB_READ_WRITE_TOKEN });
-    }
+    if (typeof del === 'function') await del(pathname, { token: process.env.BLOB_READ_WRITE_TOKEN });
   } catch (error) {
     console.error('Blob cleanup error:', error);
+  }
+}
+
+async function generateWithGeminiFiles(apiKey, prompt, files) {
+  const { GoogleGenAI, createUserContent, createPartFromUri } = await import('@google/genai');
+  const ai = new GoogleGenAI({ apiKey });
+  const uploaded = [];
+  try {
+    for (const file of files) {
+      const clean = String(file.data || '').split(',').pop();
+      const buffer = Buffer.from(clean, 'base64');
+      const item = await ai.files.upload({
+        file: new Blob([buffer], { type: file.mimeType }),
+        config: { mimeType: file.mimeType, displayName: file.name || 'kenzy-study-material' },
+      });
+      let status = item;
+      for (let attempt = 0; attempt < 12 && status?.state === 'PROCESSING'; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        status = await ai.files.get({ name: item.name });
+      }
+      if (!status?.uri || status?.state !== 'ACTIVE') {
+        throw new Error(`Gemini could not finish processing ${file.name || 'the presentation'}.`);
+      }
+      uploaded.push(status);
+    }
+
+    const contents = createUserContent([
+      ...uploaded.map((file) => createPartFromUri(file.uri, file.mimeType)),
+      prompt,
+    ]);
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.6-flash',
+      contents,
+      config: {
+        responseMimeType: 'application/json',
+        maxOutputTokens: 32768,
+        temperature: 0.25,
+      },
+    });
+    if (!response.text) throw new Error('Gemini returned no quiz data.');
+    return response.text;
+  } finally {
+    await Promise.allSettled(
+      uploaded.filter((file) => file?.name).map((file) => ai.files.delete({ name: file.name })),
+    );
   }
 }
 
@@ -56,9 +105,6 @@ export default async function handler(req, res) {
       files = [{ mimeType: 'application/pdf', data: body.pdf, name: 'study-material.pdf' }];
     }
 
-    // Large uploads arrive as private Vercel Blob references. The Blob SDK is
-    // loaded only for this path so ordinary quiz generation cannot fail at
-    // function startup because of a Blob module import.
     if (!files.length && blobFiles.length) {
       if (!process.env.BLOB_READ_WRITE_TOKEN) {
         return res.status(503).json({ error: 'Large uploads are not configured. Connect the Vercel Blob store to this project and redeploy.' });
@@ -67,11 +113,11 @@ export default async function handler(req, res) {
       let totalBytes = 0;
       const resolvedFiles = [];
 
-      for (const blobFile of blobFiles.slice(0, 4)) {
+      for (const blobFile of blobFiles.slice(0, 8)) {
         const pathname = typeof blobFile?.pathname === 'string' ? blobFile.pathname : '';
         const mimeType = blobFile?.mimeType;
-        if (!pathname || !pathname.startsWith('quiz-material/') || !ALLOWED.has(mimeType)) {
-          return res.status(400).json({ error: 'One of the large uploaded files is invalid.' });
+        if (!pathname || !pathname.startsWith('kenzy-material/') || !ALLOWED.has(mimeType)) {
+          return res.status(400).json({ error: 'One of the uploaded study files is invalid.' });
         }
 
         const stored = await readPrivateBlob(pathname);
@@ -93,9 +139,9 @@ export default async function handler(req, res) {
       files = resolvedFiles;
     }
 
-    if (!files.length) return res.status(400).json({ error: 'No PDF or image was supplied.' });
+    if (!files.length) return res.status(400).json({ error: 'No study material was supplied.' });
     if (files.some((file) => !validFile(file))) {
-      return res.status(400).json({ error: 'Unsupported file type. Use PDF, PNG, JPG, or WebP.' });
+      return res.status(400).json({ error: 'Unsupported file type. Use PDF, PPT, PPTX, PNG, JPG, or WebP.' });
     }
 
     const totalBytes = files.reduce((sum, file) => sum + base64Bytes(file.data), 0);
@@ -115,63 +161,47 @@ export default async function handler(req, res) {
       'Do not use markdown fences or any text outside the JSON.',
     ].join(' ');
 
-    // Files under 3 MB can be sent inline. Large files have already been
-    // uploaded through Blob and are read back here, so the browser never sends
-    // a 25 MB request body to this serverless function.
-    const contentsParts = [
-      ...files.map((file) => ({
-        inlineData: { mimeType: file.mimeType, data: file.data },
-      })),
-      { text: prompt },
-    ];
+    const needsFileApi = files.some((file) => PPT_TYPES.has(file.mimeType));
+    let text;
 
-    // Keep a clear error for files that would exceed the practical inline
-    // request budget after Blob retrieval. The 25 MB upload limit remains the
-    // product limit; this message is only a fallback if Gemini rejects the
-    // resulting model request.
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: contentsParts }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          maxOutputTokens: Math.min(32768, Math.max(8192, count * 650)),
-          temperature: 0.25,
-        },
-      }),
-    });
+    if (needsFileApi) {
+      text = await generateWithGeminiFiles(apiKey, prompt, files);
+    } else {
+      const contentsParts = [
+        ...files.map((file) => ({ inlineData: { mimeType: file.mimeType, data: file.data } })),
+        { text: prompt },
+      ];
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: contentsParts }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: Math.min(32768, Math.max(8192, count * 650)),
+            temperature: 0.25,
+          },
+        }),
+      });
 
-    const responseText = await response.text();
-    if (!response.ok) {
-      let message = 'Gemini could not generate the quiz.';
-      try { message = JSON.parse(responseText)?.error?.message || message; } catch {}
-      console.error('Gemini API error:', response.status, responseText);
-      return res.status(502).json({ error: `Gemini API error (${response.status}): ${message}` });
-    }
-
-    let payload;
-    try {
-      payload = JSON.parse(responseText);
-    } catch {
-      return res.status(502).json({ error: 'Gemini returned an unreadable response.' });
-    }
-
-    const text = payload?.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === 'string')?.text;
-    if (!text) {
-      const reason = payload?.candidates?.[0]?.finishReason;
-      return res.status(502).json({ error: reason ? `Gemini returned no quiz data (finish reason: ${reason}).` : 'Gemini returned no quiz data.' });
+      const responseText = await response.text();
+      if (!response.ok) {
+        let message = 'Gemini could not generate the quiz.';
+        try { message = JSON.parse(responseText)?.error?.message || message; } catch {}
+        console.error('Gemini API error:', response.status, responseText);
+        return res.status(502).json({ error: `Gemini API error (${response.status}): ${message}` });
+      }
+      let payload;
+      try { payload = JSON.parse(responseText); } catch { return res.status(502).json({ error: 'Gemini returned an unreadable response.' }); }
+      text = payload?.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === 'string')?.text;
+      if (!text) {
+        const reason = payload?.candidates?.[0]?.finishReason;
+        return res.status(502).json({ error: reason ? `Gemini returned no quiz data (finish reason: ${reason}).` : 'Gemini returned no quiz data.' });
+      }
     }
 
     let result;
-    try {
-      result = JSON.parse(text);
-    } catch {
-      return res.status(502).json({ error: 'Gemini returned invalid quiz JSON. Please try again.' });
-    }
+    try { result = JSON.parse(text); } catch { return res.status(502).json({ error: 'Gemini returned invalid quiz JSON. Please try again.' }); }
 
     const questions = Array.isArray(result.questions)
       ? result.questions.filter((q) => (
@@ -188,10 +218,8 @@ export default async function handler(req, res) {
     return res.status(200).json({ questions });
   } catch (error) {
     console.error('Quiz generation error:', error);
-    return res.status(500).json({ error: error?.message || 'Something went wrong while generating the quiz.' });
+    return res.status(/too large|25 MB/i.test(error?.message || '') ? 413 : 500).json({ error: error?.message || 'Something went wrong while generating the quiz.' });
   } finally {
-    if (cleanupBlobs.length) {
-      await Promise.allSettled(cleanupBlobs.map((pathname) => deletePrivateBlob(pathname)));
-    }
+    if (cleanupBlobs.length) await Promise.allSettled(cleanupBlobs.map((pathname) => deletePrivateBlob(pathname)));
   }
 }
