@@ -1,0 +1,6 @@
+.upload-box,.ai-v2-add-file{border-style:solid!important}
+.upload-box{border-width:1px!important}
+.ai-v2-add-file{border-width:1px!important}
+.feature-card,.workspace-card,.range-setting,.quiz-library,.chat-card{border-style:solid}
+.button,.feature-card,.workspace-card,.range-setting,.upload-box,.ai-v2-add-file,.ai-v2-attach-button{transition-property:transform,box-shadow,border-color,background-color,color,opacity}
+.button:focus-visible,.nav-item:focus-visible,.profile-menu-button:focus-visible,.theme-button:focus-visible,.upload-box:focus-within,.ai-v2-form textarea:focus-visible,.ai-v2-attach-button:focus-visible{outline:3px solid rgba(91,85,232,.22);outline-offset:2px}
