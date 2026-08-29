@@ -17,7 +17,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'No PDF was supplied.' });
     }
 
-    // Keep the JSON request comfortably below Vercel's function payload limit.
     if (pdf.length > 3_800_000) {
       return res.status(413).json({
         error: 'That PDF is too large. Please use a PDF smaller than 2.7 MB.'
@@ -41,7 +40,7 @@ export default async function handler(req, res) {
     ].join(' ');
 
     const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
       {
         method: 'POST',
         headers: {
@@ -64,7 +63,6 @@ export default async function handler(req, res) {
             }
           ],
           generationConfig: {
-            temperature: 0.2,
             responseMimeType: 'application/json'
           }
         })
@@ -120,19 +118,21 @@ export default async function handler(req, res) {
     }
 
     const questions = Array.isArray(result.questions)
-      ? result.questions.filter((item) => (
-          item &&
-          typeof item.question === 'string' &&
-          item.question.trim().length > 0 &&
-          Array.isArray(item.options) &&
-          item.options.length === 4 &&
-          item.options.every((option) => (
-            typeof option === 'string' && option.trim().length > 0
-          )) &&
-          Number.isInteger(item.correctIndex) &&
-          item.correctIndex >= 0 &&
-          item.correctIndex <= 3
-        ))
+      ? result.questions
+          .slice(0, questionCount)
+          .filter((item) => (
+            item &&
+            typeof item.question === 'string' &&
+            item.question.trim().length > 0 &&
+            Array.isArray(item.options) &&
+            item.options.length === 4 &&
+            item.options.every((option) => (
+              typeof option === 'string' && option.trim().length > 0
+            )) &&
+            Number.isInteger(item.correctIndex) &&
+            item.correctIndex >= 0 &&
+            item.correctIndex <= 3
+          ))
       : [];
 
     if (questions.length === 0) {
