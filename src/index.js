@@ -4,17 +4,15 @@ import App from './KenzyApp';
 import './Kenzy.css';
 import './ai-workspace-v2.css';
 import './ai-workspace-v2';
-import './ai-upload-limit-fix';
 import './quiz-upgrade.css';
 import './quiz-upgrade';
-import './quiz-ui-cleanup';
 import './home-button-effects.css';
 import './ai-polish';
 import './ai-paste-upload';
 import './polish.css';
 import './mobile-theme-fix.css';
 import './large-upload';
-import './upload-limit-fix';
+import './upload-25mb-unified';
 import './notes-stable.css';
 import './notes-stable';
 
