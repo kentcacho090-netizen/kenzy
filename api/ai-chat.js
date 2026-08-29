@@ -7,17 +7,25 @@ export default async function handler(req, res) {
     const messages = Array.isArray(req.body?.messages) ? req.body.messages : [];
     const clean = messages
       .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-      .slice(-12)
-      .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content.slice(0, 6000) }] }));
+      .slice(-6)
+      .map((m) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content.slice(0, 3500) }],
+      }));
 
     if (!clean.some((m) => m.role === 'user')) return res.status(400).json({ error: 'Please enter a question.' });
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: 'You are Kenzy, a helpful study assistant. Explain clearly, encourage learning, avoid pretending to know facts unsupported by the user context, and format answers for easy reading. Do not reveal private chain-of-thought or hidden reasoning.' }] },
+        systemInstruction: {
+          parts: [{
+            text: 'You are Kenzy, a fast study assistant. Answer clearly and concisely. Prefer direct answers, short explanations, bullets when useful, and avoid unnecessary repetition. Help the student learn rather than simply dumping an answer. Never reveal private chain-of-thought or hidden reasoning.',
+          }],
+        },
         contents: clean,
+        generationConfig: { maxOutputTokens: 700 },
       }),
     });
 
