@@ -2,10 +2,7 @@ import { get } from '@vercel/blob';
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const ALLOWED = new Set([
-  'application/pdf',
-  'image/png',
-  'image/jpeg',
-  'image/webp',
+  'application/pdf', 'image/png', 'image/jpeg', 'image/webp',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
@@ -13,6 +10,8 @@ const PPT_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
+const FAST_MODEL = 'gemini-3.5-flash-lite';
+const FILE_MODEL = 'gemini-3.7-flash';
 
 function approxBytes(data) { return Math.floor((data.length * 3) / 4); }
 
@@ -21,6 +20,13 @@ async function blobToBase64(pathname) {
   if (!result || result.statusCode !== 200 || !result.stream) throw new Error('Could not read one of the uploaded files.');
   const buffer = Buffer.from(await new Response(result.stream).arrayBuffer());
   return { data: buffer.toString('base64'), size: buffer.byteLength, contentType: result.blob.contentType };
+}
+
+function buildPrompt(messages) {
+  const history = messages.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-8);
+  const prompt = history.filter((m) => m.role === 'user').at(-1)?.content || 'Please help me study the attached material.';
+  const context = history.slice(0, -1).map((m) => `${m.role === 'assistant' ? 'Kenzy' : 'Student'}: ${m.content.slice(0, 2200)}`).join('\n');
+  return context ? `Recent conversation:\n${context}\n\nStudent's latest request:\n${prompt}` : prompt;
 }
 
 async function generateWithGeminiFiles(apiKey, messages, files) {
@@ -33,19 +39,15 @@ async function generateWithGeminiFiles(apiKey, messages, files) {
       const buffer = Buffer.from(clean, 'base64');
       const item = await ai.files.upload({ file: new Blob([buffer], { type: file.mimeType }), config: { mimeType: file.mimeType, displayName: file.name || 'study-material' } });
       let status = item;
-      for (let attempt = 0; attempt < 12 && status?.state === 'PROCESSING'; attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+      for (let attempt = 0; attempt < 10 && status?.state === 'PROCESSING'; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 350));
         status = await ai.files.get({ name: item.name });
       }
       if (!status?.uri || status?.state !== 'ACTIVE') throw new Error(`Gemini could not finish processing ${file.name || 'the study file'}.`);
       uploaded.push(status);
     }
-    const history = messages.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-10);
-    const prompt = history.filter((m) => m.role === 'user').at(-1)?.content || 'Please help me study the attached material.';
-    const context = history.slice(0, -1).map((m) => `${m.role === 'assistant' ? 'Kenzy' : 'Student'}: ${m.content.slice(0, 3500)}`).join('\n');
-    const combinedPrompt = context ? `Recent conversation:\n${context}\n\nStudent's latest request:\n${prompt}` : prompt;
-    const contents = createUserContent([...uploaded.map((file) => createPartFromUri(file.uri, file.mimeType)), combinedPrompt]);
-    const response = await ai.models.generateContent({ model: 'gemini-3.7-flash', contents, config: { maxOutputTokens: 900, thinkingConfig: { thinkingLevel: 'low' } } });
+    const contents = createUserContent([...uploaded.map((file) => createPartFromUri(file.uri, file.mimeType)), buildPrompt(messages)]);
+    const response = await ai.models.generateContent({ model: FILE_MODEL, contents, config: { maxOutputTokens: 750, thinkingConfig: { thinkingLevel: 'low' } } });
     if (!response.text) throw new Error('Kenzy received no answer from Gemini.');
     return response.text;
   } finally {
@@ -82,14 +84,14 @@ export default async function handler(req, res) {
       files = [...files, ...resolved];
     }
 
-    const clean = messages.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-10).map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content.slice(0, 3500) }] }));
+    const clean = messages.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-8).map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content.slice(0, 2500) }] }));
     if (!clean.some((m) => m.role === 'user')) return res.status(400).json({ error: 'Please enter a question.' });
 
     const safeFiles = files.filter((f) => f && ALLOWED.has(f.mimeType) && typeof f.data === 'string' && f.data.length > 0).slice(0, 8);
     const totalBytes = safeFiles.reduce((sum, f) => sum + approxBytes(f.data), 0);
     if (totalBytes > MAX_UPLOAD_BYTES) return res.status(413).json({ error: 'Attached AI files must stay at or below 25 MB combined.' });
 
-    const originalMessages = messages.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-10);
+    const originalMessages = messages.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-8);
     const needsFilesApi = safeFiles.some((file) => PPT_TYPES.has(file.mimeType)) || totalBytes > 3 * 1024 * 1024;
     let reply;
 
@@ -98,25 +100,23 @@ export default async function handler(req, res) {
     } else {
       const last = clean[clean.length - 1];
       if (safeFiles.length && last?.role === 'user') last.parts.push(...safeFiles.map((f) => ({ inlineData: { mimeType: f.mimeType, data: f.data } })));
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent', {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${FAST_MODEL}:generateContent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: [
             'You are Kenzy, a fast and patient study assistant.',
-            'When files are attached, answer file-specific questions from the supplied material and clearly say when the material does not contain the answer.',
+            'Answer directly and concisely unless the student asks for detail.',
+            'When files are attached, answer from the supplied material and say when it does not contain the answer.',
             'Make every answer easy for a student to read and understand.',
-            'Do NOT use raw LaTeX or programming-style math notation in your visible answer.',
-            'Never write math with ^3, ^2, sqrt, \\sqrt, \\frac, $, \\( \\), or \\[ \\].',
-            'Use readable Unicode notation instead: √, ², ³, ⁴, ×, ÷, ±, ≤, ≥, ≈ and subscripts such as log₁₀.',
-            'For fractions, write them clearly as (numerator / denominator), using parentheses when needed.',
-            'For square roots, write √(expression).',
+            'Do NOT use raw LaTeX or programming-style math notation.',
+            'Use readable Unicode notation such as √, ², ³, ⁴, ×, ÷, ±, ≤, ≥, ≈ and subscripts such as log₁₀.',
+            'For fractions, write (numerator / denominator). For square roots, write √(expression).',
             'For powers, use Unicode superscripts when practical, such as x² or 10³.',
-            'For step-by-step calculations, put each step on its own line and label the final answer clearly.',
-            'Prefer plain language over dense notation. Never reveal private chain-of-thought or hidden reasoning.',
+            'For calculations, put steps on separate lines and label the final answer.',
           ].join(' ') }] },
           contents: clean,
-          generationConfig: { maxOutputTokens: 900, thinkingConfig: { thinkingLevel: 'low' } },
+          generationConfig: { maxOutputTokens: 600, thinkingConfig: { thinkingLevel: 'low' } },
         }),
       });
       const text = await response.text();
