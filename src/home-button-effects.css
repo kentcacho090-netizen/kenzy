@@ -1,44 +1,87 @@
 .hero-actions .button{
   position:relative;
+  isolation:isolate;
   overflow:hidden;
   border:1px solid transparent;
-  transition:background-color .28s ease,color .22s ease,transform .2s ease,box-shadow .25s ease,border-color .25s ease;
+  font-size:0;
+  line-height:1;
+  transition:transform .2s ease,box-shadow .25s ease,border-color .25s ease;
 }
 
-/* Create a quiz: purple at rest → the entire button fills white on hover. */
+/* Draw the label above the animated fill so it always stays readable. */
+.hero-actions .button::after{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  white-space:nowrap;
+  font-size:14px;
+  font-weight:800;
+  line-height:1;
+}
+
+/* Create a quiz: purple at rest, expanding white circle on hover. */
 .hero-actions .button.primary{
   color:#fff;
-  background-color:#5b55e8;
-  background-image:linear-gradient(#fff,#fff);
-  background-repeat:no-repeat;
-  background-size:0% 100%;
-  background-position:100% 50%;
+  background:#5b55e8;
 }
+.hero-actions .button.primary::before{
+  content:"";
+  position:absolute;
+  z-index:1;
+  width:165%;
+  aspect-ratio:1;
+  left:100%;
+  top:50%;
+  border-radius:50%;
+  background:#fff;
+  transform:translate(-50%,-50%) scale(.035);
+  transform-origin:center;
+  transition:transform .68s cubic-bezier(.22,.8,.22,1);
+  pointer-events:none;
+}
+.hero-actions .button.primary::after{content:"＋ Create a quiz";color:#fff;transition:color .18s ease .42s;}
 .hero-actions .button.primary:hover:not(:disabled){
-  color:#4b45c8;
-  background-size:100% 100%;
   border-color:#4b45c8;
   transform:translateY(-2px);
-  box-shadow:0 14px 30px rgba(91,85,232,.20);
+  box-shadow:0 14px 30px rgba(91,85,232,.2);
 }
+.hero-actions .button.primary:hover:not(:disabled)::before{transform:translate(-50%,-50%) scale(1.2)}
+.hero-actions .button.primary:hover:not(:disabled)::after{color:#4b45c8}
 
-/* Ask Kenzy AI: white at rest → the entire button fills purple on hover. */
+/* Ask Kenzy AI: white at rest, expanding purple circle on hover. */
 .hero-actions .button.secondary{
   color:var(--text);
-  background-color:var(--surface);
-  background-image:linear-gradient(#5b55e8,#5b55e8);
-  background-repeat:no-repeat;
-  background-size:0% 100%;
-  background-position:0 50%;
+  background:var(--surface);
   border-color:var(--border);
 }
+.hero-actions .button.secondary::before{
+  content:"";
+  position:absolute;
+  z-index:1;
+  width:165%;
+  aspect-ratio:1;
+  left:0;
+  top:50%;
+  border-radius:50%;
+  background:#5b55e8;
+  transform:translate(-50%,-50%) scale(.035);
+  transform-origin:center;
+  transition:transform .68s cubic-bezier(.22,.8,.22,1);
+  pointer-events:none;
+}
+.hero-actions .button.secondary::after{content:"✦ Ask Kenzy AI";color:var(--text);transition:color .18s ease .42s;}
 .hero-actions .button.secondary:hover:not(:disabled){
-  color:#fff;
-  background-size:100% 100%;
   border-color:#5b55e8;
   transform:translateY(-2px);
-  box-shadow:0 14px 30px rgba(91,85,232,.20);
+  box-shadow:0 14px 30px rgba(91,85,232,.2);
 }
+.hero-actions .button.secondary:hover:not(:disabled)::before{transform:translate(-50%,-50%) scale(1.2)}
+.hero-actions .button.secondary:hover:not(:disabled)::after{color:#fff}
 
 .hero-actions .button:active:not(:disabled){transform:translateY(0) scale(.985)}
 
@@ -48,5 +91,7 @@
 .upload-box:hover .upload-symbol{transform:none;box-shadow:none}
 
 @media (prefers-reduced-motion:reduce){
-  .hero-actions .button{transition:none}
+  .hero-actions .button,
+  .hero-actions .button::before,
+  .hero-actions .button::after{transition:none}
 }
