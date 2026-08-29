@@ -2,12 +2,21 @@ import { upload } from '@vercel/blob/client';
 
 const LARGE_UPLOAD_THRESHOLD = 3 * 1024 * 1024;
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+const PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+const PPT_MIME = 'application/vnd.ms-powerpoint';
 const originalFetch = window.fetch.bind(window);
+
+function mimeFor(name, fallback) {
+  const lower = String(name || '').toLowerCase();
+  if (lower.endsWith('.pptx')) return PPTX_MIME;
+  if (lower.endsWith('.ppt')) return PPT_MIME;
+  return fallback;
+}
 
 function base64Bytes(value) {
   const comma = value.indexOf(',');
   const clean = comma >= 0 ? value.slice(comma + 1) : value;
-  return Math.floor((clean.length * 3) / 4) - (clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0);
+  return Math.floor((clean.length * 3) / 4);
 }
 
 function base64ToBlob(data, mimeType) {
@@ -21,6 +30,10 @@ function base64ToBlob(data, mimeType) {
 
 function safeName(name) {
   return String(name || 'study-material').replace(/[^a-zA-Z0-9._-]+/g, '-').slice(0, 120);
+}
+
+function normalizeFiles(files) {
+  return files.map((file) => ({ ...file, mimeType: mimeFor(file?.name, file?.mimeType) }));
 }
 
 function polishLimitCopy() {
@@ -44,9 +57,6 @@ document.addEventListener('click', refreshCopy, true);
 document.addEventListener('change', refreshCopy, true);
 refreshCopy();
 
-// Legacy React handlers still contain a 3 MB client-side guard. For files between
-// 3 MB and 25 MB, temporarily expose a small File.size while those handlers run.
-// The underlying File bytes are never changed; the true size is restored after the event.
 document.addEventListener('change', (event) => {
   const input = event.target;
   if (!(input instanceof HTMLInputElement) || input.type !== 'file') return;
@@ -64,7 +74,8 @@ document.addEventListener('change', (event) => {
 async function uploadLargeFiles(files) {
   const uploaded = [];
   for (const file of files) {
-    const blob = base64ToBlob(file.data, file.mimeType);
+    const mimeType = mimeFor(file.name, file.mimeType);
+    const blob = base64ToBlob(file.data, mimeType);
     const result = await upload(
       `kenzy-material/${crypto.randomUUID()}-${safeName(file.name)}`,
       blob,
@@ -74,7 +85,7 @@ async function uploadLargeFiles(files) {
         multipart: blob.size > 5 * 1024 * 1024,
       },
     );
-    uploaded.push({ pathname: result.pathname, mimeType: file.mimeType, name: file.name });
+    uploaded.push({ pathname: result.pathname, mimeType, name: file.name });
   }
   return uploaded;
 }
@@ -89,12 +100,15 @@ window.fetch = async function largeUploadFetch(input, init = {}) {
   const files = Array.isArray(body.files) ? body.files : [];
   if (!files.length) return originalFetch(input, init);
 
-  const totalBytes = files.reduce((sum, file) => sum + (typeof file.data === 'string' ? base64Bytes(file.data) : 0), 0);
-  if (totalBytes <= LARGE_UPLOAD_THRESHOLD) return originalFetch(input, init);
+  const normalized = normalizeFiles(files);
+  const totalBytes = normalized.reduce((sum, file) => sum + (typeof file.data === 'string' ? base64Bytes(file.data) : 0), 0);
+  if (totalBytes <= LARGE_UPLOAD_THRESHOLD) {
+    return originalFetch(input, { ...init, body: JSON.stringify({ ...body, files: normalized }) });
+  }
   if (totalBytes > MAX_UPLOAD_BYTES) throw new Error('The combined upload is too large. Please keep it at or below 25 MB.');
 
   try {
-    const uploaded = await uploadLargeFiles(files);
+    const uploaded = await uploadLargeFiles(normalized);
     return originalFetch(input, { ...init, body: JSON.stringify({ ...body, files: [], blobFiles: uploaded }) });
   } catch (error) {
     throw new Error(error?.message || 'The larger file could not be uploaded.');
