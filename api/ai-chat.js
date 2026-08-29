@@ -14,9 +14,7 @@ const PPT_TYPES = new Set([
   'application/vnd.ms-powerpoint',
 ]);
 
-function approxBytes(data) {
-  return Math.floor((data.length * 3) / 4);
-}
+function approxBytes(data) { return Math.floor((data.length * 3) / 4); }
 
 async function blobToBase64(pathname) {
   const result = await get(pathname, { access: 'private', useCache: false });
@@ -33,10 +31,7 @@ async function generateWithGeminiFiles(apiKey, messages, files) {
     for (const file of files) {
       const clean = String(file.data || '').split(',').pop();
       const buffer = Buffer.from(clean, 'base64');
-      const item = await ai.files.upload({
-        file: new Blob([buffer], { type: file.mimeType }),
-        config: { mimeType: file.mimeType, displayName: file.name || 'kenzy-study-material' },
-      });
+      const item = await ai.files.upload({ file: new Blob([buffer], { type: file.mimeType }), config: { mimeType: file.mimeType, displayName: file.name || 'study-material' } });
       let status = item;
       for (let attempt = 0; attempt < 12 && status?.state === 'PROCESSING'; attempt += 1) {
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -45,23 +40,12 @@ async function generateWithGeminiFiles(apiKey, messages, files) {
       if (!status?.uri || status?.state !== 'ACTIVE') throw new Error(`Gemini could not finish processing ${file.name || 'the study file'}.`);
       uploaded.push(status);
     }
-
-    const history = messages
-      .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-      .slice(-10)
-      .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', text: m.content.slice(0, 3500) }));
-    const prompt = history.filter((m) => m.role === 'user').at(-1)?.text || 'Please help me study the attached material.';
-    const context = history.slice(0, -1).map((m) => `${m.role === 'model' ? 'Kenzy' : 'Student'}: ${m.text}`).join('\n');
+    const history = messages.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-10);
+    const prompt = history.filter((m) => m.role === 'user').at(-1)?.content || 'Please help me study the attached material.';
+    const context = history.slice(0, -1).map((m) => `${m.role === 'assistant' ? 'Kenzy' : 'Student'}: ${m.content.slice(0, 3500)}`).join('\n');
     const combinedPrompt = context ? `Recent conversation:\n${context}\n\nStudent's latest request:\n${prompt}` : prompt;
-    const contents = createUserContent([
-      ...uploaded.map((file) => createPartFromUri(file.uri, file.mimeType)),
-      combinedPrompt,
-    ]);
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents,
-      config: { maxOutputTokens: 900, temperature: 0.25 },
-    });
+    const contents = createUserContent([...uploaded.map((file) => createPartFromUri(file.uri, file.mimeType)), combinedPrompt]);
+    const response = await ai.models.generateContent({ model: 'gemini-3.7-flash', contents, config: { maxOutputTokens: 900, thinkingConfig: { thinkingLevel: 'low' } } });
     if (!response.text) throw new Error('Kenzy received no answer from Gemini.');
     return response.text;
   } finally {
@@ -98,12 +82,9 @@ export default async function handler(req, res) {
       files = [...files, ...resolved];
     }
 
-    const clean = messages
-      .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-      .slice(-10)
-      .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content.slice(0, 3500) }] }));
-
+    const clean = messages.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-10).map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content.slice(0, 3500) }] }));
     if (!clean.some((m) => m.role === 'user')) return res.status(400).json({ error: 'Please enter a question.' });
+
     const safeFiles = files.filter((f) => f && ALLOWED.has(f.mimeType) && typeof f.data === 'string' && f.data.length > 0).slice(0, 8);
     const totalBytes = safeFiles.reduce((sum, f) => sum + approxBytes(f.data), 0);
     if (totalBytes > MAX_UPLOAD_BYTES) return res.status(413).json({ error: 'Attached AI files must stay at or below 25 MB combined.' });
@@ -117,8 +98,7 @@ export default async function handler(req, res) {
     } else {
       const last = clean[clean.length - 1];
       if (safeFiles.length && last?.role === 'user') last.parts.push(...safeFiles.map((f) => ({ inlineData: { mimeType: f.mimeType, data: f.data } })));
-
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
@@ -136,10 +116,9 @@ export default async function handler(req, res) {
             'Prefer plain language over dense notation. Never reveal private chain-of-thought or hidden reasoning.',
           ].join(' ') }] },
           contents: clean,
-          generationConfig: { maxOutputTokens: 900, temperature: 0.2 },
+          generationConfig: { maxOutputTokens: 900, thinkingConfig: { thinkingLevel: 'low' } },
         }),
       });
-
       const text = await response.text();
       if (!response.ok) {
         let message = 'Gemini could not answer right now.';
