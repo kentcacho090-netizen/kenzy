@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@google/genai": "2.19.0",
     "@google/generative-ai": "^0.24.1",
     "@vercel/blob": "^2.6.1",
     "react": "^18.3.1",
