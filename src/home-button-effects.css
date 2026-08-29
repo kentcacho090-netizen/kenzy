@@ -1,61 +1,43 @@
 .hero-actions .button{
   position:relative;
-  isolation:isolate;
   overflow:hidden;
   border:1px solid transparent;
-  transition:transform .2s ease,box-shadow .25s ease,border-color .25s ease;
+  transition:background-color .28s ease,color .22s ease,transform .2s ease,box-shadow .25s ease,border-color .25s ease;
 }
 
-/* Keep the label above the animated fill so it can never disappear. */
-.hero-actions .button::before{
-  content:"";
-  position:absolute;
-  z-index:-1;
-  width:120%;
-  aspect-ratio:1;
-  border-radius:50%;
-  left:100%;
-  top:50%;
-  transform:translate(-18%,-50%) scale(.08);
-  transform-origin:center;
-  transition:transform .62s cubic-bezier(.22,.8,.22,1),background-color .2s ease;
-  pointer-events:none;
-}
-
+/* Create a quiz: purple at rest → the entire button fills white on hover. */
 .hero-actions .button.primary{
   color:#fff;
-  background:#5b55e8;
-  transition:color .2s ease .28s,transform .2s ease,box-shadow .25s ease,border-color .25s ease;
+  background-color:#5b55e8;
+  background-image:linear-gradient(#fff,#fff);
+  background-repeat:no-repeat;
+  background-size:0% 100%;
+  background-position:100% 50%;
 }
-.hero-actions .button.primary::before{background:#fff}
 .hero-actions .button.primary:hover:not(:disabled){
   color:#4b45c8;
+  background-size:100% 100%;
   border-color:#4b45c8;
   transform:translateY(-2px);
   box-shadow:0 14px 30px rgba(91,85,232,.20);
 }
-.hero-actions .button.primary:hover:not(:disabled)::before{
-  transform:translate(-50%,-50%) scale(1.18);
-}
 
+/* Ask Kenzy AI: white at rest → the entire button fills purple on hover. */
 .hero-actions .button.secondary{
   color:var(--text);
-  background:var(--surface);
+  background-color:var(--surface);
+  background-image:linear-gradient(#5b55e8,#5b55e8);
+  background-repeat:no-repeat;
+  background-size:0% 100%;
+  background-position:0 50%;
   border-color:var(--border);
-  transition:color .2s ease .28s,transform .2s ease,box-shadow .25s ease,border-color .25s ease;
-}
-.hero-actions .button.secondary::before{
-  background:#5b55e8;
-  left:0;
 }
 .hero-actions .button.secondary:hover:not(:disabled){
   color:#fff;
+  background-size:100% 100%;
   border-color:#5b55e8;
   transform:translateY(-2px);
   box-shadow:0 14px 30px rgba(91,85,232,.20);
-}
-.hero-actions .button.secondary:hover:not(:disabled)::before{
-  transform:translate(-50%,-50%) scale(1.18);
 }
 
 .hero-actions .button:active:not(:disabled){transform:translateY(0) scale(.985)}
@@ -66,6 +48,5 @@
 .upload-box:hover .upload-symbol{transform:none;box-shadow:none}
 
 @media (prefers-reduced-motion:reduce){
-  .hero-actions .button,
-  .hero-actions .button::before{transition:none}
+  .hero-actions .button{transition:none}
 }
