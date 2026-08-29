@@ -39,7 +39,7 @@
   top:50%;
   border-radius:50%;
   background:#fff;
-  transform:translate(-50%,-50%) scale(.035);
+  transform:translate(-50%,-50%) scale(0);
   transform-origin:center;
   transition:transform .68s cubic-bezier(.22,.8,.22,1);
   pointer-events:none;
@@ -69,7 +69,7 @@
   top:50%;
   border-radius:50%;
   background:#5b55e8;
-  transform:translate(-50%,-50%) scale(.035);
+  transform:translate(-50%,-50%) scale(0);
   transform-origin:center;
   transition:transform .68s cubic-bezier(.22,.8,.22,1);
   pointer-events:none;
