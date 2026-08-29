@@ -7,6 +7,7 @@ import './ai-workspace-v2';
 import './quiz-upgrade.css';
 import './quiz-upgrade';
 import './home-button-effects.css';
+import './ai-polish';
 
 const root = createRoot(document.getElementById('root'));
 root.render(
