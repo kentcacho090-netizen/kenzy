@@ -1,0 +1,13 @@
+.upload-box{position:relative;isolation:isolate;overflow:hidden;cursor:pointer;transition:color .5s,transform .25s,box-shadow .25s,border-color .25s;background:var(--surface)}
+.upload-box::before{content:"";position:absolute;z-index:-1;top:100%;left:100%;width:260px;height:260px;border-radius:50%;background:var(--accent);transform:translate(0,0);transition:top .7s,left .7s}
+.upload-box::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,0) 25%,rgba(255,255,255,.08) 48%,rgba(255,255,255,0) 72%);transform:translateX(-110%);transition:transform .7s ease;pointer-events:none;z-index:0}
+.upload-box:hover{color:#fff;border-color:var(--accent);transform:translateY(-4px);box-shadow:0 25px 55px rgba(91,85,232,.24)}
+.upload-box:hover::before{top:-70px;left:-60px}
+.upload-box:hover::after{transform:translateX(110%)}
+.upload-box:active{transform:translateY(-1px) scale(.995)}
+.upload-box:active::before{background:var(--accent2);transition:background 0s}
+.upload-box:hover .upload-symbol{background:rgba(255,255,255,.16);color:#fff;transform:translateY(-4px) scale(1.05);box-shadow:0 12px 28px rgba(0,0,0,.12)}
+.upload-box:hover strong,.upload-box:hover small,.upload-box:hover .upload-hint{color:#fff}
+.upload-box.has-files:hover{border-color:var(--accent2)}
+.upload-box>*,.upload-box label{position:relative;z-index:1}
+@media (prefers-reduced-motion:reduce){.upload-box,.upload-box::before,.upload-box::after,.upload-box .upload-symbol{transition:none}.upload-box:hover{transform:none}.upload-box::before{display:none}}
