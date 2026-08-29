@@ -1,0 +1,1 @@
+Kenzy is an AI-assisted study quiz maker. The source supports PDF/image uploads, timed quizzes, 1–100 questions, and answer review.
