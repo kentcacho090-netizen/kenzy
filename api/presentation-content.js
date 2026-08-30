@@ -6,7 +6,7 @@ const ALLOWED = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
-const GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+const GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
 function retryable(status) { return [429, 500, 502, 503, 504].includes(Number(status)); }
 async function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 function decode(value) { const text = String(value || ''); const comma = text.indexOf(','); return Buffer.from(comma >= 0 ? text.slice(comma + 1) : text, 'base64'); }
@@ -33,7 +33,7 @@ async function askGemini(apiKey, kind, body, files) {
         ? `You are StudyKen, a fast and patient study assistant. Answer the student's latest request using the supplied files when relevant. Keep the explanation easy to understand. Avoid raw LaTeX and programming-style math; use √, ², ³, ×, ÷, ≤, ≥, ≈ and readable fractions. Student conversation:\n${(Array.isArray(body.messages) ? body.messages : []).slice(-8).map((m) => `${m.role}: ${String(m.content || '')}`).join('\n')}`
         : [`Task: ${String(body.action || 'Improve these notes for studying.').slice(0, 500)}`, body.title ? `Note title: ${String(body.title).slice(0, 200)}` : '', body.content ? `Current note:\n${String(body.content).slice(0, 30000)}` : '', 'Use the supplied files as the primary source when provided.', 'Create accurate, editable, student-friendly notes. Preserve important terminology and structure.', 'Use readable Unicode math such as √, ², ³, ×, ÷, ±, ≤, ≥ and log₁₀. Never use raw LaTeX.'].filter(Boolean).join('\n\n');
     const parts = [...uploaded.map((file) => createPartFromUri(file.uri, file.mimeType)), prompt];
-    const config = kind === 'quiz' ? { responseMimeType: 'application/json', maxOutputTokens: Math.min(32768, Math.max(8192, count * 650)), thinkingConfig: { thinkingLevel: 'low' } } : { maxOutputTokens: kind === 'notes' ? 3500 : 800, thinkingConfig: { thinkingLevel: 'low' } };
+    const config = kind === 'quiz' ? { responseMimeType: 'application/json', maxOutputTokens: Math.min(32768, Math.max(8192, count * 650)) } : { maxOutputTokens: kind === 'notes' ? 3500 : 800 };
     let lastError = null;
     for (const model of GEMINI_MODELS) {
       for (let attempt = 0; attempt < 2; attempt += 1) {
