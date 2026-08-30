@@ -57,10 +57,11 @@ function formatAssistantBubble(bubble) {
 
   bubble.dataset.kenzyFormatting = 'busy';
   const fragment = document.createDocumentFragment();
-  paragraphs.forEach((paragraph) => {
+  paragraphs.forEach((paragraph, index) => {
     const block = document.createElement('div');
     block.className = 'kenzy-message-paragraph';
     block.textContent = paragraph;
+    if (index > 0) block.style.marginTop = '0.9rem';
     fragment.appendChild(block);
   });
   bubble.replaceChildren(fragment);
