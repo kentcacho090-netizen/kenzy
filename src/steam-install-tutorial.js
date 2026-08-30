@@ -1,5 +1,6 @@
 const TUTORIAL_ID = 'kenzy-steam-install-tutorial';
 
+const STEAMTOOLS_URL = 'https://steamtools.net/';
 const STEAMDB_URL = 'https://steamdb.info/';
 
 // Screenshot-derived guide visuals supplied by the user, kept inline so the guide has no extra asset dependencies.
@@ -37,16 +38,17 @@ function createTutorial() {
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">1</div>
             <div>
-              <h3>Install the required application</h3>
-              <p>Begin by downloading the application from its official website. On the download page, select the recommended setup option shown in the screenshot below.</p>
+              <h3>Install SteamTools</h3>
+              <p>First, open the <strong>SteamTools</strong> website using the button below. On the website, click <strong>Download Setup (Recommended)</strong> to download the installer.</p>
+              <a class="download-button" href="${STEAMTOOLS_URL}" target="_blank" rel="noopener noreferrer">Open SteamTools ↗</a>
               ${guideImage(GUIDE_IMAGES.download, 'Screenshot showing the Download Setup (Recommended) button', 'guide-wide')}
             </div>
           </article>
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">2</div>
             <div>
-              <h3>Install and run the application</h3>
-              <p>After the installer has finished downloading, complete the installation and launch the application. When it is running, use the screenshot below as the visual reference for the floating Steam interface.</p>
+              <h3>Install and run SteamTools</h3>
+              <p>After the download is complete, install SteamTools and run it. When it is running, you should see the <strong>floating Steam interface</strong> shown in the screenshot below. This floating interface is where you will later interact with supported files.</p>
               ${guideImage(GUIDE_IMAGES.logo, 'Screenshot reference showing the floating Steam interface', 'guide-logo')}
             </div>
           </article>
@@ -77,29 +79,43 @@ function createTutorial() {
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">3</div>
             <div>
-              <h3>Use the App ID with an authorized installation method</h3>
-              <p>Keep the App ID for the next step in your legitimate setup. For games you own or are authorized to access, use Steam's normal installation process or the official documentation for the software you are using.</p>
+              <h3>Continue with an authorized installation method</h3>
+              <p>Keep the App ID available for your legitimate setup. For games you own or are authorized to access, use Steam's normal installation process or the official documentation for the software you are using.</p>
             </div>
           </article>
         </div>
       </details>
 
       <details class="steam-fold">
-        <summary><span class="steam-fold-number">03</span><span class="steam-fold-title">Restart Steam &amp; finish</span><span class="steam-fold-chevron">⌄</span></summary>
+        <summary><span class="steam-fold-number">03</span><span class="steam-fold-title">Add files &amp; restart Steam</span><span class="steam-fold-chevron">⌄</span></summary>
         <div class="steam-fold-content">
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">1</div>
             <div>
-              <h3>Restart Steam when required</h3>
-              <p>If the application says that a change will take effect after Steam restarts, follow its documented restart procedure. If necessary, fully exit Steam and launch it again.</p>
-              ${guideImage(GUIDE_IMAGES.toast, 'Screenshot showing the message that changes take effect after Steam restarts', 'guide-wide')}
+              <h3>Prepare the authorized downloaded files</h3>
+              <p>After obtaining files through an authorized source, locate the downloaded files. If they are contained in a ZIP archive, extract the archive first. Select all of the resulting files together so they are ready to be added to the floating Steam interface.</p>
             </div>
           </article>
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">2</div>
             <div>
-              <h3>Verify the game</h3>
-              <p>After Steam restarts, open your Library and launch the game normally. If the game has a problem, use Steam's official troubleshooting and file-verification tools.</p>
+              <h3>Drag the files into the floating Steam interface</h3>
+              <p>With SteamTools running and the floating Steam interface visible, select the prepared files and drag them into the floating interface at once. Use the floating Steam screenshot above as your visual reference for where the files should be dropped.</p>
+            </div>
+          </article>
+          <article class="steam-step-card steam-step-wide">
+            <div class="steam-step-number">3</div>
+            <div>
+              <h3>Restart Steam</h3>
+              <p>If SteamTools reports that the change will take effect after Steam restarts, right-click the floating application and use its restart option. Otherwise, fully exit Steam and launch it again.</p>
+              ${guideImage(GUIDE_IMAGES.toast, 'Screenshot showing the message that Lua scripts take effect after Steam restarts', 'guide-wide')}
+            </div>
+          </article>
+          <article class="steam-step-card steam-step-wide">
+            <div class="steam-step-number">4</div>
+            <div>
+              <h3>Enjoy your game</h3>
+              <p>After Steam has restarted, open your Library and verify that the game is available through the normal Steam interface.</p>
             </div>
           </article>
         </div>
