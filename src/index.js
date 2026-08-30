@@ -12,6 +12,7 @@ import './ai-workspace-v3.css';
 import './steam-install-tutorial.css';
 import './ai-chat-readability';
 import './steam-install-tutorial';
+import './steam-tutorial-folder';
 
 const rootElement = document.getElementById('root');
 
