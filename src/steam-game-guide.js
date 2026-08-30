@@ -32,7 +32,7 @@ function createSteamIconSvg() {
 }
 
 function buildGuideHtml() {
-  const unlocked = isUnlocked();
+  // Always start locked in the HTML; unlock state is applied after wire
   return `
     <article class="steam-guide-card application-card" id="${GUIDE_ID}">
       <div class="sg-folder">
@@ -47,7 +47,7 @@ function buildGuideHtml() {
           <span class="sg-chevron" data-sg-chevron>▾</span>
         </div>
         <div class="sg-folder-body" data-sg-body hidden>
-          ${unlocked ? buildUnlockedContent() : buildLockBox()}
+          ${buildLockBox()}
         </div>
       </div>
     </article>
@@ -56,7 +56,7 @@ function buildGuideHtml() {
 
 function buildLockBox() {
   return `
-    <div class="sg-lock-box">
+    <div class="sg-lock-box" data-sg-lock-ui>
       <p>This folder is locked. Enter the password to unlock the Steam game install tutorial.</p>
       <input class="sg-key-input" type="password" data-sg-key placeholder="Password" autocomplete="off" />
       <button class="button primary sg-unlock-btn" type="button" data-sg-unlock>Unlock</button>
@@ -67,7 +67,7 @@ function buildLockBox() {
 
 function buildUnlockedContent() {
   return `
-    <div class="steam-guide-body">
+    <div class="steam-guide-body" data-sg-unlocked-ui>
 
       <section>
         <div class="eyebrow">INSTALL</div>
@@ -165,8 +165,23 @@ function buildUnlockedContent() {
   `;
 }
 
+function applyLockState(card) {
+  const body = card.querySelector('[data-sg-body]');
+  if (!body) return;
+  if (isUnlocked()) {
+    body.innerHTML = buildUnlockedContent();
+  } else {
+    body.innerHTML = buildLockBox();
+  }
+}
+
 function wireCard(card) {
-  if (!card || card.dataset.sgWired === '1') return;
+  if (!card) return;
+
+  // Always re-apply correct lock state (in case localStorage changed)
+  applyLockState(card);
+
+  if (card.dataset.sgWired === '1') return;
   card.dataset.sgWired = '1';
 
   const head = card.querySelector('[data-sg-toggle]');
@@ -199,12 +214,16 @@ function wireCard(card) {
       const input = card.querySelector('[data-sg-key]');
       const err = card.querySelector('[data-sg-error]');
       const value = (input && input.value) || '';
+      // Exact case-sensitive match
       if (value === STEAM_KEY) {
         setUnlocked(true);
         if (body) body.innerHTML = buildUnlockedContent();
-      } else if (err) {
-        err.hidden = false;
-        err.textContent = 'Wrong password.';
+        if (err) err.hidden = true;
+      } else {
+        if (err) {
+          err.hidden = false;
+          err.textContent = 'Wrong password.';
+        }
       }
       return;
     }
@@ -217,7 +236,6 @@ function wireCard(card) {
 }
 
 function isOnApplicationsPage() {
-  // Only inject when the Applications page grid is in the DOM
   return !!document.querySelector('.applications-grid');
 }
 
@@ -227,7 +245,6 @@ function removeSteamGuide() {
 }
 
 function injectSteamGuide() {
-  // Hard rule: never show outside Applications page
   if (!isOnApplicationsPage()) {
     removeSteamGuide();
     return;
@@ -235,7 +252,6 @@ function injectSteamGuide() {
 
   const existing = document.getElementById(GUIDE_ID);
   if (existing) {
-    // Make sure it still lives inside the applications grid
     const grid = document.querySelector('.applications-grid');
     if (grid && !grid.contains(existing)) {
       existing.remove();
