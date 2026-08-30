@@ -102,23 +102,28 @@ export default async function handler(req, res) {
     if (totalBytes > MAX_UPLOAD_BYTES) return res.status(413).json({ error: 'The combined upload is too large. Please keep it at or below 25 MB.' });
 
     const count = Math.min(Math.max(Number.parseInt(body.count, 10) || 10, 1), 100);
-    const prompt = [
+    const suggestion = typeof body.suggestion === 'string' ? body.suggestion.trim().slice(0, 1500) : '';
+    const promptParts = [
       `Create exactly ${count} high-quality multiple-choice questions from the attached study material.`,
       'Use only information supported by the supplied material.',
-      'Avoid duplicate questions, trick wording, and unsupported facts.',
+      'Avoid duplicate questions and unsupported facts.',
+      'Make the distractors plausible and clearly distinguishable by understanding the material, not by guessable answer patterns.',
       'Each question must have exactly four plausible answer choices.',
       'correctIndex must be zero-based: 0, 1, 2, or 3.',
       'Use clear, student-friendly wording while preserving important terminology from the material.',
+      suggestion ? `The student also requested this optional quiz guidance: ${suggestion}` : '',
+      'Treat the optional guidance as a request about difficulty, focus, question style, and coverage. Follow it when it is compatible with the supplied material.',
+      'For requests for difficult or tricky questions, increase reasoning depth and use realistic scenarios, multi-step reasoning, application, comparison, error analysis, or problem-solving when the material supports it. Do not invent facts or formulas that are absent from the material.',
       'Return ONLY valid JSON in exactly this shape: {"questions":[{"question":"...","options":["...","...","...","..."],"correctIndex":0}]}.',
       'Do not use markdown fences or any text outside the JSON.',
-    ].join(' ');
+    ].filter(Boolean).join(' ');
 
     const needsFileApi = files.some((file) => PPT_TYPES.has(file.mimeType)) || totalBytes > 3 * 1024 * 1024;
     let text;
     if (needsFileApi) {
-      text = await generateWithGeminiFiles(apiKey, prompt, files);
+      text = await generateWithGeminiFiles(apiKey, promptParts, files);
     } else {
-      const contentsParts = [...files.map((file) => ({ inlineData: { mimeType: file.mimeType, data: file.data } })), { text: prompt }];
+      const contentsParts = [...files.map((file) => ({ inlineData: { mimeType: file.mimeType, data: file.data } })), { text: promptParts }];
       let lastStatus = 502;
       let lastMessage = 'Gemini could not generate the quiz.';
       let generatedText = null;
@@ -133,7 +138,12 @@ export default async function handler(req, res) {
             let payload;
             try { payload = JSON.parse(responseText); } catch { return res.status(502).json({ error: 'Gemini returned an unreadable response.' }); }
             generatedText = payload?.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === 'string')?.text;
-            if (!generatedText) { const reason = payload?.candidates?.[0]?.finishReason; lastStatus = 502; lastMessage = reason ? `Gemini returned no quiz data (finish reason: ${reason}).` : 'Gemini returned no quiz data.'; break; }
+            if (!generatedText) {
+              const reason = payload?.candidates?.[0]?.finishReason;
+              lastStatus = 502;
+              lastMessage = reason ? `Gemini returned no quiz data (finish reason: ${reason}).` : 'Gemini returned no quiz data.';
+              break;
+            }
             break outer;
           }
           lastStatus = response.status;
