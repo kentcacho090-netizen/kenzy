@@ -4,6 +4,9 @@ const GUIDE_ID = 'kenzy-steam-game-guide';
 const STEAM_KEY = 'Franciskent999@';
 const STEAM_UNLOCK_STORAGE = 'kenzy-steam-unlocked-v1';
 
+// Clear unlock flag once when this module loads (every full page refresh)
+try { localStorage.removeItem(STEAM_UNLOCK_STORAGE); } catch (e) {}
+
 function isUnlocked() {
   try {
     return localStorage.getItem(STEAM_UNLOCK_STORAGE) === '1';
@@ -32,7 +35,6 @@ function createSteamIconSvg() {
 }
 
 function buildGuideHtml() {
-  // Always start locked in the HTML; unlock state is applied after wire
   return `
     <article class="steam-guide-card application-card" id="${GUIDE_ID}">
       <div class="sg-folder">
@@ -68,7 +70,6 @@ function buildLockBox() {
 function buildUnlockedContent() {
   return `
     <div class="steam-guide-body" data-sg-unlocked-ui>
-
       <section>
         <div class="eyebrow">INSTALL</div>
         <h3>1. Install SteamTools</h3>
@@ -127,7 +128,7 @@ function buildUnlockedContent() {
           <li>Open <a href="https://depotbox.org/" target="_blank" rel="noreferrer"><strong>DepotBox</strong></a> (Steam Depot Generator).</li>
           <li>Paste the App ID into the search field (image 4) and press <strong>Search</strong>.</li>
           <li>Select your game from the results and download the generated <strong>.lua</strong> file.</li>
-          <li>You should see a confirmation toast: “Compiled 1 Lua scripts…” (image 5).</li>
+          <li>You should see a confirmation toast: "Compiled 1 Lua scripts..." (image 5).</li>
         </ol>
         <a class="download-button" href="https://depotbox.org/" target="_blank" rel="noreferrer">Open DepotBox ↗</a>
         <div class="steam-guide-images">
@@ -160,7 +161,6 @@ function buildUnlockedContent() {
       <section class="sg-lock-again">
         <button class="button secondary" type="button" data-sg-lock>Lock folder again</button>
       </section>
-
     </div>
   `;
 }
@@ -177,10 +177,7 @@ function applyLockState(card) {
 
 function wireCard(card) {
   if (!card) return;
-
-  // Always re-apply correct lock state (in case localStorage changed)
   applyLockState(card);
-
   if (card.dataset.sgWired === '1') return;
   card.dataset.sgWired = '1';
 
@@ -214,16 +211,13 @@ function wireCard(card) {
       const input = card.querySelector('[data-sg-key]');
       const err = card.querySelector('[data-sg-error]');
       const value = (input && input.value) || '';
-      // Exact case-sensitive match
       if (value === STEAM_KEY) {
         setUnlocked(true);
         if (body) body.innerHTML = buildUnlockedContent();
         if (err) err.hidden = true;
-      } else {
-        if (err) {
-          err.hidden = false;
-          err.textContent = 'Wrong password.';
-        }
+      } else if (err) {
+        err.hidden = false;
+        err.textContent = 'Wrong password.';
       }
       return;
     }
@@ -275,10 +269,7 @@ function injectSteamGuide() {
 
 function startSteamGuide() {
   injectSteamGuide();
-
-  const observer = new MutationObserver(() => {
-    injectSteamGuide();
-  });
+  const observer = new MutationObserver(() => injectSteamGuide());
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
