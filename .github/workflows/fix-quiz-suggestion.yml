@@ -15,12 +15,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Normalize the real Quiz Maker component
+      - name: Normalize the Quiz Maker suggestion field
         shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
-          import re
 
           path = Path('src/KenzyApp.js')
           text = path.read_text(encoding='utf-8')
@@ -56,34 +55,35 @@ jobs:
     </div>
 """
 
-          # Remove every existing suggestion panel between the upload area and settings controls.
-          before, sep, after = text.partition(marker)
-          if sep:
-              cleaned_before = re.sub(
-                  r'\n    <div(?: id=\"kenzy-quiz-suggestion\")? style=\{\{ marginTop: 16,.*?(?=\n    <div className=\"settings-grid\">)',
-                  '',
-                  before,
-                  flags=re.DOTALL,
-              )
-              # If the older inline block uses a different exact shape, remove repeated labeled blocks conservatively.
-              cleaned_before = re.sub(
-                  r'\n    <div[^>]*>\n      <div className=\"eyebrow\">OPTIONAL (?:SUGGESTION|INSTRUCTIONS)</div>.*?(?=\n    <div className=\"settings-grid\">)',
-                  '',
-                  cleaned_before,
-                  flags=re.DOTALL,
-              )
-              text = cleaned_before + panel + sep + after
+          legacy = """    <div style={{ marginTop: 16, padding: 18, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18 }}>
+      <div className=\"eyebrow\">OPTIONAL SUGGESTION</div>
+      <strong style={{ display: 'block', marginTop: 6, color: 'var(--text)', fontSize: 16 }}>Tell Kenzy how you want the quiz made</strong>
+      <p style={{ margin: '6px 0 12px', color: 'var(--muted)', lineHeight: 1.5, fontSize: 13 }}>Add extra instructions about difficulty, question style, focus, or problem-solving.</p>
+      <textarea
+        value={suggestion}
+        onChange={(event) => setSuggestion(event.target.value.slice(0, 1500))}
+        rows={4}
+        maxLength={1500}
+        placeholder={'Example:\npls also provide problem solving for me and make it really difficult'}
+        aria-label=\"Optional quiz instructions\"
+        style={{ width: '100%', resize: 'vertical', minHeight: 105, border: '1px solid var(--border)', borderRadius: 13, padding: 13, background: 'var(--surface2)', color: 'var(--text)', outline: 'none', lineHeight: 1.5, fontFamily: 'inherit' }}
+      />
+      <div style={{ textAlign: 'right', marginTop: 6, color: 'var(--muted)', fontSize: 11 }}>{suggestion.length}/1500</div>
+    </div>
+"""
+
+          # Remove exact legacy panels and any previously generated canonical panel.
+          while legacy in text:
+              text = text.replace(legacy, '', 1)
+          while panel in text:
+              text = text.replace(panel, '', 1)
+
+          if marker in text:
+              text = text.replace(marker, panel + marker, 1)
 
           if text != original:
               path.write_text(text, encoding='utf-8')
-          else:
-              print('No normalization needed.')
           PY
-
-      - name: Check source syntax
-        shell: bash
-        run: |
-          node --check src/KenzyApp.js
 
       - name: Commit normalization when needed
         shell: bash
