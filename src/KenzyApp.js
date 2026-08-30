@@ -239,6 +239,7 @@ function CreatePage({ onBack, onCreate }) {
   const [files, setFiles] = useState([]);
   const [count, setCount] = useState(10);
   const [minutes, setMinutes] = useState(10);
+  const [suggestion, setSuggestion] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [stage, setStage] = useState(0);
@@ -273,7 +274,7 @@ function CreatePage({ onBack, onCreate }) {
     try {
       const encoded = await Promise.all(files.map(async (file) => ({ mimeType: file.type, data: await toBase64(file) })));
       setStage(1);
-      const response = await fetch('/api/generate-quiz', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: encoded, count }) });
+      const response = await fetch('/api/generate-quiz', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: encoded, count, suggestion: suggestion.trim().slice(0, 1000) }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Quiz generation failed.');
       setStage(3);
@@ -297,6 +298,21 @@ function CreatePage({ onBack, onCreate }) {
       <small>{files.length ? `${Math.ceil(files.reduce((a, f) => a + f.size, 0) / 1024)} KB total · ${files.map((f) => f.name).join(', ')}` : 'PDF, PNG, JPG, or WebP · maximum 3 MB combined'}</small>
       <span className="upload-hint">Drop files here or click to browse</span>
     </label>
+    <div style={{ marginTop: 16, padding: 18, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18 }}>
+      <div className="eyebrow">OPTIONAL SUGGESTION</div>
+      <strong style={{ display: 'block', marginTop: 6, color: 'var(--text)', fontSize: 16 }}>Tell Kenzy how you want the quiz made</strong>
+      <p style={{ margin: '6px 0 12px', color: 'var(--muted)', lineHeight: 1.5, fontSize: 13 }}>Add extra instructions about difficulty, question style, focus, or problem-solving.</p>
+      <textarea
+        value={suggestion}
+        onChange={(event) => setSuggestion(event.target.value.slice(0, 1500))}
+        rows={4}
+        maxLength={1500}
+        placeholder={'Example:\npls also provide problem solving for me and make it really difficult'}
+        aria-label="Optional quiz instructions"
+        style={{ width: '100%', resize: 'vertical', minHeight: 105, border: '1px solid var(--border)', borderRadius: 13, padding: 13, background: 'var(--surface2)', color: 'var(--text)', outline: 'none', lineHeight: 1.5, fontFamily: 'inherit' }}
+      />
+      <div style={{ textAlign: 'right', marginTop: 6, color: 'var(--muted)', fontSize: 11 }}>{suggestion.length}/1500</div>
+    </div>
     <div className="settings-grid"><Range label="Questions" value={count} min={1} max={100} onChange={setCount} /><Range label="Time limit" value={minutes} min={1} max={180} suffix="min" onChange={setMinutes} /></div>
     {error && <div className="error-box">{error}</div>}
     <button className="button primary full-width" disabled={!files.length || busy} onClick={generate}>{busy ? 'Generating…' : 'Generate quiz'}</button>
