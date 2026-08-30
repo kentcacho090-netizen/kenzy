@@ -2,7 +2,7 @@ const CONV_KEY = 'kenzy-ai-conversations-v2';
 const FILE_META_KEY = 'kenzy-ai-file-meta-v2';
 const DB_NAME = 'kenzy-ai-files-v2';
 
-const SUPERSCRIPT = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻' };
+const SUPERSCRIPT = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁸','8':'⁸','9':'⁹','+':'⁺','-':'⁻' };
 const SUBSCRIPT = { '0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋' };
 
 function mapChars(value, table) {
@@ -157,13 +157,55 @@ function bind() {
   }
 }
 
+const thinkingMessages = [
+  'Reading your question…',
+  'Connecting the ideas…',
+  'Preparing a clear explanation…',
+  'Checking the details…',
+  'Almost there…',
+];
+
+function installThinkingStyles() {
+  if (document.getElementById('kenzy-thinking-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'kenzy-thinking-styles';
+  style.textContent = `
+    .kenzy-thinking { display:flex; align-items:center; gap:10px; min-width:220px; }
+    .kenzy-thinking-text { color:var(--muted,#68728a); font-size:13px; font-weight:700; animation:kenzyThinkingFade .35s ease; }
+    .kenzy-thinking-dots { display:inline-flex; gap:4px; align-items:center; }
+    .kenzy-thinking-dots i { width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.35; animation:kenzyThinkingDot 1.1s infinite ease-in-out; }
+    .kenzy-thinking-dots i:nth-child(2){animation-delay:.15s}.kenzy-thinking-dots i:nth-child(3){animation-delay:.3s}
+    @keyframes kenzyThinkingDot{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-4px);opacity:.9}}
+    @keyframes kenzyThinkingFade{from{opacity:0;transform:translateY(2px)}to{opacity:1;transform:none}}
+    @media (prefers-reduced-motion:reduce){.kenzy-thinking-text,.kenzy-thinking-dots i{animation:none}}
+  `;
+  document.head.appendChild(style);
+}
+
+function decorateThinking() {
+  installThinkingStyles();
+  document.querySelectorAll('.typing').forEach((node) => {
+    if (node.dataset.kenzyThinking === '1') return;
+    node.dataset.kenzyThinking = '1';
+    node.innerHTML = '<span class="kenzy-thinking"><span class="kenzy-thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="kenzy-thinking-text" aria-live="polite">Reading your question…</span></span>';
+    const label = node.querySelector('.kenzy-thinking-text');
+    let index = 0;
+    const timer = window.setInterval(() => {
+      if (!document.body.contains(node)) { window.clearInterval(timer); return; }
+      index = (index + 1) % thinkingMessages.length;
+      label.textContent = thinkingMessages[index];
+    }, 1500);
+  });
+}
+
 let observer;
 function boot() {
   if (observer) return;
-  observer = new MutationObserver(() => { bind(); decorateMessages(); });
+  observer = new MutationObserver(() => { bind(); decorateMessages(); decorateThinking(); });
   observer.observe(document.body, { childList: true, subtree: true });
   bind();
   decorateMessages();
+  decorateThinking();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
