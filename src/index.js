@@ -9,7 +9,9 @@ import './mobile-theme-fix.css';
 import './notes-stable.css';
 import './study-dashboard-polish.css';
 import './ai-workspace-v3.css';
+import './steam-install-tutorial.css';
 import './ai-chat-readability';
+import './steam-install-tutorial';
 
 const rootElement = document.getElementById('root');
 
