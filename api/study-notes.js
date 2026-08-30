@@ -12,8 +12,8 @@ const PPT_TYPES = new Set([
 // Use stable, supported Gemini models for Notes AI. Keep the list short so a
 // capacity outage does not waste the entire serverless execution window.
 const GEMINI_MODELS = [
-  'gemini-2.5-flash-lite',
-  'gemini-2.5-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
 ];
 
 function retryable(status) { return [429, 500, 502, 503, 504].includes(Number(status)); }

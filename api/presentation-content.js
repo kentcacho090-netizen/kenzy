@@ -6,7 +6,7 @@ const ALLOWED = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
-const GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash'];
 function retryable(status) { return [429, 500, 502, 503, 504].includes(Number(status)); }
 async function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 function decode(value) { const text = String(value || ''); const comma = text.indexOf(','); return Buffer.from(comma >= 0 ? text.slice(comma + 1) : text, 'base64'); }

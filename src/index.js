@@ -9,7 +9,6 @@ import './mobile-theme-fix.css';
 import './notes-stable.css';
 import './study-dashboard-polish.css';
 import './ai-workspace-v3.css';
-import './steam-game-guide.css';
 
 const rootElement = document.getElementById('root');
 
@@ -38,7 +37,6 @@ function loadEnhancements() {
     ['dashboard polish', () => import('./study-dashboard-polish')],
     ['stability fixes', () => import('./stability-fixes')],
     ['AI workspace enhancements', () => import('./ai-workspace-v3')],
-    ['Steam game guide', () => import('./steam-game-guide')],
   ];
 
   for (const [label, load] of loaders) {

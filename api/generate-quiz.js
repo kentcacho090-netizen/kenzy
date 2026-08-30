@@ -11,7 +11,7 @@ const PPT_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
-const GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash'];
 
 function validFile(file) { return file && ALLOWED.has(file.mimeType) && typeof file.data === 'string' && file.data.length > 0; }
 function base64Bytes(data) { const comma = data.indexOf(','); const clean = comma >= 0 ? data.slice(comma + 1) : data; return Math.floor(clean.length * 0.75); }

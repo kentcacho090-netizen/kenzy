@@ -8,7 +8,7 @@ const PPT_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
-const GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash'];
 
 const retryable = (status) => [429, 500, 502, 503, 504].includes(Number(status));
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
