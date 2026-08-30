@@ -24,34 +24,33 @@ root.render(
   </React.StrictMode>
 );
 
-// Keep the core app independent from optional enhancement scripts.
-// Each enhancement loads after the first render and cannot prevent Kenzy from mounting.
-const enhancements = [
-  ['./quiz-upgrade', 'quiz enhancements'],
-  ['./ai-polish', 'AI polish'],
-  ['./ai-paste-upload', 'AI upload enhancements'],
-  ['./large-upload', 'large upload support'],
-  ['./true-upload-limit', 'upload limit handling'],
-  ['./presentation-support', 'presentation support'],
-  ['./notes-stable', 'notes enhancements'],
-  ['./notes-ai-result-controls', 'notes result controls'],
-  ['./study-dashboard-polish', 'dashboard polish'],
-  ['./stability-fixes', 'stability fixes'],
-  ['./ai-workspace-v3', 'AI workspace enhancements'],
-];
+// Load optional enhancement scripts after the core application has mounted.
+// Each import is a static module expression so Create React App can compile it safely,
+// and each module is isolated so one enhancement cannot stop the entire website.
+function loadEnhancements() {
+  const loaders = [
+    ['quiz enhancements', () => import('./quiz-upgrade')],
+    ['AI polish', () => import('./ai-polish')],
+    ['AI upload enhancements', () => import('./ai-paste-upload')],
+    ['large upload support', () => import('./large-upload')],
+    ['upload limit handling', () => import('./true-upload-limit')],
+    ['presentation support', () => import('./presentation-support')],
+    ['notes enhancements', () => import('./notes-stable')],
+    ['notes result controls', () => import('./notes-ai-result-controls')],
+    ['dashboard polish', () => import('./study-dashboard-polish')],
+    ['stability fixes', () => import('./stability-fixes')],
+    ['AI workspace enhancements', () => import('./ai-workspace-v3')],
+  ];
 
-async function loadEnhancements() {
-  for (const [path, label] of enhancements) {
-    try {
-      await import(path);
-    } catch (error) {
+  for (const [label, load] of loaders) {
+    void load().catch((error) => {
       console.error(`Kenzy ${label} failed to load. Core features remain available.`, error);
-    }
+    });
   }
 }
 
 function startEnhancements() {
-  void loadEnhancements();
+  loadEnhancements();
 }
 
 if (typeof window !== 'undefined') {
@@ -62,8 +61,8 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Remove duplicate legacy quiz-instruction panels once the Create Quiz page is rendered.
-// The cleanup is DOM-only and does not interfere with React state.
+// Remove duplicate legacy quiz-instruction panels after the Create Quiz page renders.
+// This is deliberately independent from the optional enhancement modules.
 function normalizeQuizInstructions() {
   const inputs = Array.from(document.querySelectorAll('textarea[aria-label="Optional quiz instructions"]'));
   if (!inputs.length) return;
