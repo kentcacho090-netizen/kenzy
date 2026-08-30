@@ -2,7 +2,7 @@ const TUTORIAL_ID = 'kenzy-steam-install-tutorial';
 
 const STEAMTOOLS_URL = 'https://steamtools.net/';
 const STEAMDB_URL = 'https://steamdb.info/';
-const DEPOTBOX_URL = 'https://depotbox.com/';
+const DEPOTBOX_URL = 'https://depotbox.org/';
 
 // Screenshot-derived guide visuals supplied by the user, kept inline so the guide has no extra asset dependencies.
 const GUIDE_IMAGES = {
@@ -81,15 +81,15 @@ function createTutorial() {
             <div class="steam-step-number">3</div>
             <div>
               <h3>Open DepotBox</h3>
-              <p>For games and content you are authorized to access, open <strong>DepotBox — Steam Depot Generator</strong> and use its available tools according to the service's terms and the rights you have to the game.</p>
+              <p>Open <strong>DepotBox — Steam Depot Generator</strong> using the button below. Enter the App ID you copied earlier and press <strong>Search</strong>.</p>
               <a class="download-button secondary-link" href="${DEPOTBOX_URL}" target="_blank" rel="noopener noreferrer">Open DepotBox ↗</a>
             </div>
           </article>
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">4</div>
             <div>
-              <h3>Use authorized game files</h3>
-              <p>Use only files that you are authorized to download and use. If a downloaded archive contains multiple files, extract it first and keep the files together for the next step.</p>
+              <h3>Find your game and download the Lua file</h3>
+              <p>After searching, you should see your game in the results. Click the game, then download the <strong>Lua</strong> file provided for it.</p>
             </div>
           </article>
         </div>
@@ -101,30 +101,31 @@ function createTutorial() {
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">1</div>
             <div>
-              <h3>Prepare the authorized downloaded files</h3>
-              <p>Locate the files you are authorized to use. If they are contained in a ZIP archive, extract the archive first, then select all of the resulting files together.</p>
+              <h3>Prepare the downloaded files</h3>
+              <p>After downloading the files, locate them on your computer. If the download is contained in a ZIP file, extract it first. Then select all of the downloaded files together.</p>
             </div>
           </article>
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">2</div>
             <div>
               <h3>Drag the files into the floating Steam interface</h3>
-              <p>With SteamTools running and the floating Steam interface visible, select the prepared authorized files and drag them into the floating interface at once. Use the floating Steam screenshot above as your visual reference.</p>
+              <p>With SteamTools running and the floating Steam interface visible, drag all of the selected files into the floating Steam interface at once.</p>
+              ${guideImage(GUIDE_IMAGES.logo, 'Floating Steam interface reference', 'guide-logo')}
             </div>
           </article>
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">3</div>
             <div>
               <h3>Restart Steam</h3>
-              <p>If SteamTools reports that a change will take effect after Steam restarts, right-click the floating application and use its restart option, or fully exit Steam and launch it again.</p>
-              ${guideImage(GUIDE_IMAGES.toast, 'Screenshot showing the message that Lua scripts take effect after Steam restarts', 'guide-wide')}
+              <p>Right-click the floating application and restart Steam. After restarting, the changes should take effect.</p>
+              ${guideImage(GUIDE_IMAGES.toast, 'Screenshot showing that the Lua scripts take effect after Steam restarts', 'guide-wide')}
             </div>
           </article>
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">4</div>
             <div>
-              <h3>Finish</h3>
-              <p>After Steam has restarted, open your Library and verify that the game is available through the normal Steam interface.</p>
+              <h3>Enjoy</h3>
+              <p>Once Steam has restarted, open Steam and check that everything has loaded correctly.</p>
             </div>
           </article>
         </div>
