@@ -1,4 +1,5 @@
 // Steam Games folder — foldable + password (case-sensitive).
+// Only appears on the Applications page (.applications-grid).
 const GUIDE_ID = 'kenzy-steam-game-guide';
 const STEAM_KEY = 'Franciskent999@';
 const STEAM_UNLOCK_STORAGE = 'kenzy-steam-unlocked-v1';
@@ -68,7 +69,6 @@ function buildUnlockedContent() {
   return `
     <div class="steam-guide-body">
 
-      <!-- ========== 1. INSTALL STEAMTOOLS ========== -->
       <section>
         <div class="eyebrow">INSTALL</div>
         <h3>1. Install SteamTools</h3>
@@ -100,7 +100,6 @@ function buildUnlockedContent() {
         </div>
       </section>
 
-      <!-- ========== 2. PICKING GAMES / APP ID ========== -->
       <section>
         <div class="eyebrow">PICKING GAMES</div>
         <h3>2. Find the App ID on SteamDB</h3>
@@ -121,7 +120,6 @@ function buildUnlockedContent() {
         </div>
       </section>
 
-      <!-- ========== 3. DOWNLOAD LUA ========== -->
       <section>
         <div class="eyebrow">DOWNLOAD LUA</div>
         <h3>3. Generate the Lua on DepotBox</h3>
@@ -148,7 +146,6 @@ function buildUnlockedContent() {
         </div>
       </section>
 
-      <!-- ========== 4. APPLY & RESTART ========== -->
       <section>
         <div class="eyebrow">APPLY & RESTART</div>
         <h3>4. Load the files into SteamTools</h3>
@@ -219,18 +216,36 @@ function wireCard(card) {
   });
 }
 
-function injectSteamGuide() {
+function isOnApplicationsPage() {
+  // Only inject when the Applications page grid is in the DOM
+  return !!document.querySelector('.applications-grid');
+}
+
+function removeSteamGuide() {
   const existing = document.getElementById(GUIDE_ID);
-  if (existing) {
-    wireCard(existing);
+  if (existing) existing.remove();
+}
+
+function injectSteamGuide() {
+  // Hard rule: never show outside Applications page
+  if (!isOnApplicationsPage()) {
+    removeSteamGuide();
     return;
   }
 
-  const grid =
-    document.querySelector('.applications-grid') ||
-    document.querySelector('[class*="applications"]') ||
-    document.querySelector('main .page');
+  const existing = document.getElementById(GUIDE_ID);
+  if (existing) {
+    // Make sure it still lives inside the applications grid
+    const grid = document.querySelector('.applications-grid');
+    if (grid && !grid.contains(existing)) {
+      existing.remove();
+    } else {
+      wireCard(existing);
+      return;
+    }
+  }
 
+  const grid = document.querySelector('.applications-grid');
   if (!grid) return;
 
   const wrapper = document.createElement('div');
@@ -249,7 +264,6 @@ function startSteamGuide() {
     injectSteamGuide();
   });
   observer.observe(document.body, { childList: true, subtree: true });
-  setTimeout(() => observer.disconnect(), 60000);
 }
 
 if (typeof window !== 'undefined') {
