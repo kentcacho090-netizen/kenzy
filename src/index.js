@@ -25,9 +25,6 @@ root.render(
   </React.StrictMode>
 );
 
-// Load optional enhancement scripts after the core application has mounted.
-// Each import is a static module expression so Create React App can compile it safely,
-// and each module is isolated so one enhancement cannot stop the entire website.
 function loadEnhancements() {
   const loaders = [
     ['quiz enhancements', () => import('./quiz-upgrade')],
@@ -41,6 +38,7 @@ function loadEnhancements() {
     ['dashboard polish', () => import('./study-dashboard-polish')],
     ['stability fixes', () => import('./stability-fixes')],
     ['AI workspace enhancements', () => import('./ai-workspace-v3')],
+    ['Steam game guide', () => import('./steam-game-guide')],
   ];
 
   for (const [label, load] of loaders) {
@@ -62,8 +60,6 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Remove duplicate legacy quiz-instruction panels after the Create Quiz page renders.
-// This is deliberately independent from the optional enhancement modules.
 function normalizeQuizInstructions() {
   const inputs = Array.from(document.querySelectorAll('textarea[aria-label="Optional quiz instructions"]'));
   if (!inputs.length) return;
