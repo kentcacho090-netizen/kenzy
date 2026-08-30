@@ -8,19 +8,7 @@ const PPT_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
-
-// Prefer the lightweight stable models for routine notes work. They are explicitly
-// designed for high-throughput/simple processing, while the regular Flash models
-// remain available as fallbacks.
-const GEMINI_MODELS = [
-  'gemini-3.5-flash-lite',
-  'gemini-3.1-flash-lite',
-  'gemini-3.6-flash',
-  'gemini-3.5-flash',
-  'gemini-3.7-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.5-flash',
-];
+const GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
 
 const retryable = (status) => [429, 500, 502, 503, 504].includes(Number(status));
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -69,13 +57,12 @@ async function callRest(apiKey, prompt, files, action) {
       const timeout = setTimeout(() => controller.abort(), 45000);
       try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-          method: 'POST',
-          signal: controller.signal,
+          method: 'POST', signal: controller.signal,
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: SYSTEM }] },
             contents: [{ role: 'user', parts }],
-            generationConfig: { maxOutputTokens: outputLimit(action, files.length > 0), thinkingConfig: { thinkingLevel: 'low' } },
+            generationConfig: { maxOutputTokens: outputLimit(action, files.length > 0) },
           }),
         });
         const text = await response.text();
@@ -124,11 +111,7 @@ async function callFilesApi(apiKey, prompt, files, action) {
     for (const model of GEMINI_MODELS) {
       for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
-          const response = await ai.models.generateContent({
-            model,
-            contents,
-            config: { maxOutputTokens: outputLimit(action, true), thinkingConfig: { thinkingLevel: 'low' } },
-          });
+          const response = await ai.models.generateContent({ model, contents, config: { maxOutputTokens: outputLimit(action, true) } });
           if (response.text) return response.text;
           throw new Error('Kenzy received no result from Gemini.');
         } catch (error) {
@@ -157,7 +140,6 @@ export default async function handler(req, res) {
     const content = typeof body.content === 'string' ? body.content.slice(0, 30000) : '';
     let files = Array.isArray(body.files) ? body.files.filter(Boolean).slice(0, 8) : [];
     const blobFiles = Array.isArray(body.blobFiles) ? body.blobFiles.filter(Boolean).slice(0, 8) : [];
-
     if (blobFiles.length) {
       if (!process.env.BLOB_READ_WRITE_TOKEN) return res.status(503).json({ error: 'Large note imports need a connected Vercel Blob store.' });
       files = [];
@@ -166,14 +148,12 @@ export default async function handler(req, res) {
         const pathname = typeof item.pathname === 'string' ? item.pathname : '';
         const mimeType = item.mimeType;
         if (!pathname.startsWith('notes-material/') || !ALLOWED.has(mimeType)) return res.status(400).json({ error: 'Invalid note file.' });
-        const buffer = await readPrivateBlob(pathname);
-        total += buffer.byteLength;
+        const buffer = await readPrivateBlob(pathname); total += buffer.byteLength;
         if (total > MAX_BYTES) return res.status(413).json({ error: 'Keep imported note files at or below 25 MB combined.' });
         files.push({ name: item.name || 'study-file', mimeType, data: buffer.toString('base64') });
         cleanup.push(pathname);
       }
     }
-
     if (files.some((file) => !ALLOWED.has(file.mimeType) || typeof file.data !== 'string' || !file.data)) return res.status(400).json({ error: 'Use PDF, PPT, PPTX, JPG, PNG, or WebP files only.' });
     const totalBytes = files.reduce((sum, file) => sum + Math.floor(file.data.length * 0.75), 0);
     if (totalBytes > MAX_BYTES) return res.status(413).json({ error: 'Keep note files at or below 25 MB combined.' });
@@ -187,9 +167,8 @@ export default async function handler(req, res) {
       'Be concise but complete. Finish the requested task in one response.',
     ].filter(Boolean).join('\n\n');
 
-    const result = files.some((file) => PPT_TYPES.has(file.mimeType)) || totalBytes > 3 * 1024 * 1024
-      ? await callFilesApi(apiKey, prompt, files, action)
-      : await callRest(apiKey, prompt, files, action);
+    const needsFileApi = files.some((file) => PPT_TYPES.has(file.mimeType)) || totalBytes > 3 * 1024 * 1024;
+    const result = needsFileApi ? await callFilesApi(apiKey, prompt, files, action) : await callRest(apiKey, prompt, files, action);
     return res.status(200).json({ result });
   } catch (error) {
     console.error('Resilient study notes exception:', error);
