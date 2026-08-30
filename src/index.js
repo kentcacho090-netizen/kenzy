@@ -10,8 +10,6 @@ import './notes-stable.css';
 import './study-dashboard-polish.css';
 import './ai-workspace-v3.css';
 import './steam-game-guide.css';
-import './ai-chat-readability';
-import './steam-game-guide';
 
 const rootElement = document.getElementById('root');
 
