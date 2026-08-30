@@ -1,0 +1,62 @@
+name: Fix Quiz Maker suggestion field
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch the real Quiz Maker component
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('src/KenzyApp.js')
+          text = path.read_text(encoding='utf-8')
+
+          original = text
+
+          if "const [suggestion, setSuggestion] = useState('');" not in text:
+              text = text.replace(
+                  "  const [minutes, setMinutes] = useState(10);\n",
+                  "  const [minutes, setMinutes] = useState(10);\n  const [suggestion, setSuggestion] = useState('');\n",
+                  1,
+              )
+
+          old_fetch = "body: JSON.stringify({ files: encoded, count })"
+          new_fetch = "body: JSON.stringify({ files: encoded, count, suggestion: suggestion.trim().slice(0, 1000) })"
+          if old_fetch in text and new_fetch not in text:
+              text = text.replace(old_fetch, new_fetch, 1)
+
+          marker = "    <div className=\"settings-grid\"><Range label=\"Questions\" value={count} min={1} max={100} onChange={setCount} /><Range label=\"Time limit\" value={minutes} min={1} max={180} suffix=\"min\" onChange={setMinutes} /></div>"
+          panel = """    <div style={{ marginTop: 16, padding: 18, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18 }}>\n      <div className=\"eyebrow\">OPTIONAL SUGGESTION</div>\n      <strong style={{ display: 'block', marginTop: 6, color: 'var(--text)', fontSize: 16 }}>Tell Kenzy how you want the quiz made</strong>\n      <p style={{ margin: '6px 0 12px', color: 'var(--muted)', lineHeight: 1.5, fontSize: 13 }}>Add extra instructions about difficulty, question style, focus, or problem-solving.</p>\n      <textarea\n        value={suggestion}\n        onChange={(event) => setSuggestion(event.target.value.slice(0, 1500))}\n        rows={4}\n        maxLength={1500}\n        placeholder={'Example:\\npls also provide problem solving for me and make it really difficult'}\n        aria-label=\"Optional quiz instructions\"\n        style={{ width: '100%', resize: 'vertical', minHeight: 105, border: '1px solid var(--border)', borderRadius: 13, padding: 13, background: 'var(--surface2)', color: 'var(--text)', outline: 'none', lineHeight: 1.5, fontFamily: 'inherit' }}\n      />\n      <div style={{ textAlign: 'right', marginTop: 6, color: 'var(--muted)', fontSize: 11 }}>{suggestion.length}/1500</div>\n    </div>\n"""
+          if "kenzy-quiz-suggestion" not in text and marker in text:
+              text = text.replace(marker, panel + marker, 1)
+
+          if text == original:
+              raise SystemExit('No source changes were necessary.')
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/KenzyApp.js
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Add quiz instructions field to Quiz Maker"
+          git push
