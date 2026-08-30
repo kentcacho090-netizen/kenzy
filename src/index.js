@@ -14,6 +14,7 @@ import './true-upload-limit';
 import './presentation-support';
 import './notes-stable.css';
 import './notes-stable';
+import './notes-ai-result-controls';
 import './study-dashboard-polish.css';
 import './study-dashboard-polish';
 import './stability-fixes';
