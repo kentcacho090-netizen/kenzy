@@ -10,7 +10,15 @@ const PPT_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
-const GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+
+// Gemini 2.5 Flash was returning 404 for this project/user. Use current stable Gemini 3 models.
+const GEMINI_MODELS = [
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+];
 
 function approxBytes(data) { return Math.floor((String(data || '').replace(/^data:[^,]+,/, '').length * 3) / 4); }
 function retryable(status) { return [429, 500, 502, 503, 504].includes(Number(status)); }
