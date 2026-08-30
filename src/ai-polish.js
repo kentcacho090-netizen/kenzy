@@ -2,7 +2,7 @@ const CONV_KEY = 'kenzy-ai-conversations-v2';
 const FILE_META_KEY = 'kenzy-ai-file-meta-v2';
 const DB_NAME = 'kenzy-ai-files-v2';
 
-const SUPERSCRIPT = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁸','8':'⁸','9':'⁹','+':'⁺','-':'⁻' };
+const SUPERSCRIPT = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻' };
 const SUBSCRIPT = { '0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋' };
 
 function mapChars(value, table) {
