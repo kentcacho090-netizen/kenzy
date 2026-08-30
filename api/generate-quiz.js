@@ -19,6 +19,25 @@ function isRetryableGeminiStatus(status) { return [429, 500, 502, 503, 504].incl
 function getGeminiStatus(error) { return Number(error?.status || error?.statusCode || error?.response?.status || 0); }
 async function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
+function shuffle(array) {
+  const result = [...array];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [result[index], result[randomIndex]] = [result[randomIndex], result[index]];
+  }
+  return result;
+}
+
+function randomizeQuestion(question) {
+  const options = question.options.map((text, index) => ({ text, index }));
+  const shuffledOptions = shuffle(options);
+  return {
+    ...question,
+    options: shuffledOptions.map((option) => option.text),
+    correctIndex: shuffledOptions.findIndex((option) => option.index === question.correctIndex),
+  };
+}
+
 async function readPrivateBlob(pathname) {
   const { get } = await import('@vercel/blob');
   const result = await get(pathname, { access: 'private', useCache: false });
@@ -102,18 +121,15 @@ export default async function handler(req, res) {
     if (totalBytes > MAX_UPLOAD_BYTES) return res.status(413).json({ error: 'The combined upload is too large. Please keep it at or below 25 MB.' });
 
     const count = Math.min(Math.max(Number.parseInt(body.count, 10) || 10, 1), 100);
-    const suggestion = typeof body.suggestion === 'string' ? body.suggestion.trim().slice(0, 1500) : '';
-    const promptParts = [
+    const suggestion = typeof body.suggestion === 'string' ? body.suggestion.trim().slice(0, 1000) : '';
+    const prompt = [
       `Create exactly ${count} high-quality multiple-choice questions from the attached study material.`,
       'Use only information supported by the supplied material.',
-      'Avoid duplicate questions and unsupported facts.',
-      'Make the distractors plausible and clearly distinguishable by understanding the material, not by guessable answer patterns.',
+      'Avoid duplicate questions, trick wording, and unsupported facts.',
       'Each question must have exactly four plausible answer choices.',
       'correctIndex must be zero-based: 0, 1, 2, or 3.',
       'Use clear, student-friendly wording while preserving important terminology from the material.',
-      suggestion ? `The student also requested this optional quiz guidance: ${suggestion}` : '',
-      'Treat the optional guidance as a request about difficulty, focus, question style, and coverage. Follow it when it is compatible with the supplied material.',
-      'For requests for difficult or tricky questions, increase reasoning depth and use realistic scenarios, multi-step reasoning, application, comparison, error analysis, or problem-solving when the material supports it. Do not invent facts or formulas that are absent from the material.',
+      suggestion ? `Follow this optional student request when it is compatible with the material: ${suggestion}` : '',
       'Return ONLY valid JSON in exactly this shape: {"questions":[{"question":"...","options":["...","...","...","..."],"correctIndex":0}]}.',
       'Do not use markdown fences or any text outside the JSON.',
     ].filter(Boolean).join(' ');
@@ -121,9 +137,9 @@ export default async function handler(req, res) {
     const needsFileApi = files.some((file) => PPT_TYPES.has(file.mimeType)) || totalBytes > 3 * 1024 * 1024;
     let text;
     if (needsFileApi) {
-      text = await generateWithGeminiFiles(apiKey, promptParts, files);
+      text = await generateWithGeminiFiles(apiKey, prompt, files);
     } else {
-      const contentsParts = [...files.map((file) => ({ inlineData: { mimeType: file.mimeType, data: file.data } })), { text: promptParts }];
+      const contentsParts = [...files.map((file) => ({ inlineData: { mimeType: file.mimeType, data: file.data } })), { text: prompt }];
       let lastStatus = 502;
       let lastMessage = 'Gemini could not generate the quiz.';
       let generatedText = null;
@@ -138,12 +154,7 @@ export default async function handler(req, res) {
             let payload;
             try { payload = JSON.parse(responseText); } catch { return res.status(502).json({ error: 'Gemini returned an unreadable response.' }); }
             generatedText = payload?.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === 'string')?.text;
-            if (!generatedText) {
-              const reason = payload?.candidates?.[0]?.finishReason;
-              lastStatus = 502;
-              lastMessage = reason ? `Gemini returned no quiz data (finish reason: ${reason}).` : 'Gemini returned no quiz data.';
-              break;
-            }
+            if (!generatedText) { const reason = payload?.candidates?.[0]?.finishReason; lastStatus = 502; lastMessage = reason ? `Gemini returned no quiz data (finish reason: ${reason}).` : 'Gemini returned no quiz data.'; break; }
             break outer;
           }
           lastStatus = response.status;
@@ -163,7 +174,11 @@ export default async function handler(req, res) {
       ? result.questions.filter((q) => q && typeof q.question === 'string' && q.question.trim() && Array.isArray(q.options) && q.options.length === 4 && q.options.every((option) => typeof option === 'string' && option.trim()) && Number.isInteger(q.correctIndex) && q.correctIndex >= 0 && q.correctIndex < 4)
       : [];
     if (!questions.length) return res.status(502).json({ error: 'Gemini did not return a valid quiz. Please try again.' });
-    return res.status(200).json({ questions });
+
+    // Randomize question order and answer-choice order on the server.
+    // The correct index is remapped so scoring and answer review remain accurate.
+    const randomizedQuestions = shuffle(questions).map(randomizeQuestion);
+    return res.status(200).json({ questions: randomizedQuestions });
   } catch (error) {
     console.error('Quiz generation error:', error);
     return res.status(/too large|25 MB/i.test(error?.message || '') ? 413 : 500).json({ error: error?.message || 'Something went wrong while generating the quiz.' });
