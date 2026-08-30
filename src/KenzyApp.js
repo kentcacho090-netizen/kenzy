@@ -4,6 +4,8 @@ import './Kenzy.css';
 const QUIZ_STORAGE = 'kenzy-quizzes-v4';
 const NOTES_STORAGE = 'kenzy-notes-v1';
 const THEME_STORAGE = 'kenzy-theme-v4';
+const STEAM_KEY = 'Franciskent999@';
+const STEAM_UNLOCK_STORAGE = 'kenzy-steam-unlocked-v1';
 
 const APPLICATIONS = [
   { name: 'Study app', description: 'A useful study application will be added here.', icon: '📚', url: '' },
@@ -313,36 +315,6 @@ function CreatePage({ onBack, onCreate }) {
       />
       <div style={{ textAlign: 'right', marginTop: 6, color: 'var(--muted)', fontSize: 11 }}>{suggestion.length}/1500</div>
     </div>
-    <div style={{ marginTop: 16, padding: 18, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18 }}>
-      <div className="eyebrow">OPTIONAL SUGGESTION</div>
-      <strong style={{ display: 'block', marginTop: 6, color: 'var(--text)', fontSize: 16 }}>Tell Kenzy how you want the quiz made</strong>
-      <p style={{ margin: '6px 0 12px', color: 'var(--muted)', lineHeight: 1.5, fontSize: 13 }}>Add extra instructions about difficulty, question style, focus, or problem-solving.</p>
-      <textarea
-        value={suggestion}
-        onChange={(event) => setSuggestion(event.target.value.slice(0, 1500))}
-        rows={4}
-        maxLength={1500}
-        placeholder={'Example:\npls also provide problem solving for me and make it really difficult'}
-        aria-label="Optional quiz instructions"
-        style={{ width: '100%', resize: 'vertical', minHeight: 105, border: '1px solid var(--border)', borderRadius: 13, padding: 13, background: 'var(--surface2)', color: 'var(--text)', outline: 'none', lineHeight: 1.5, fontFamily: 'inherit' }}
-      />
-      <div style={{ textAlign: 'right', marginTop: 6, color: 'var(--muted)', fontSize: 11 }}>{suggestion.length}/1500</div>
-    </div>
-    <div style={{ marginTop: 16, padding: 18, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18 }}>
-      <div className="eyebrow">OPTIONAL SUGGESTION</div>
-      <strong style={{ display: 'block', marginTop: 6, color: 'var(--text)', fontSize: 16 }}>Tell Kenzy how you want the quiz made</strong>
-      <p style={{ margin: '6px 0 12px', color: 'var(--muted)', lineHeight: 1.5, fontSize: 13 }}>Add extra instructions about difficulty, question style, focus, or problem-solving.</p>
-      <textarea
-        value={suggestion}
-        onChange={(event) => setSuggestion(event.target.value.slice(0, 1500))}
-        rows={4}
-        maxLength={1500}
-        placeholder={'Example:\npls also provide problem solving for me and make it really difficult'}
-        aria-label="Optional quiz instructions"
-        style={{ width: '100%', resize: 'vertical', minHeight: 105, border: '1px solid var(--border)', borderRadius: 13, padding: 13, background: 'var(--surface2)', color: 'var(--text)', outline: 'none', lineHeight: 1.5, fontFamily: 'inherit' }}
-      />
-      <div style={{ textAlign: 'right', marginTop: 6, color: 'var(--muted)', fontSize: 11 }}>{suggestion.length}/1500</div>
-    </div>
     <div className="settings-grid"><Range label="Questions" value={count} min={1} max={100} onChange={setCount} /><Range label="Time limit" value={minutes} min={1} max={180} suffix="min" onChange={setMinutes} /></div>
     {error && <div className="error-box">{error}</div>}
     <button className="button primary full-width" disabled={!files.length || busy} onClick={generate}>{busy ? 'Generating…' : 'Generate quiz'}</button>
@@ -368,7 +340,7 @@ function QuizPage({ quiz, onExit, onFinish }) {
   function submit() { if (submitted) return; setSubmitted(true); const correct = answers.reduce((n, a, i) => n + (a === quiz.questions[i].correctIndex ? 1 : 0), 0); onFinish({ timestamp: new Date().toISOString(), correct, score: Math.round((correct / quiz.questions.length) * 100), answers, timeSpent: Math.max(0, quiz.timeLimit * 60 - seconds) }); }
   useEffect(() => { if (submitted) return undefined; if (seconds <= 0) { submit(); return undefined; } const timer = setTimeout(() => setSeconds((value) => value - 1), 1000); return () => clearTimeout(timer); });
   const q = quiz.questions[index];
-  return <section className="page quiz-page"><div className="quiz-toolbar"><button className="back-button" onClick={onExit}>← Exit</button><div className={seconds < 60 ? 'timer danger' : 'timer'}>◷ {String(Math.floor(Math.max(0, seconds) / 60)).padStart(2, '0')}:{String(Math.max(0, seconds) % 60).padStart(2, '0')}</div></div><div className="progress-track"><span style={{ width: `${((index + 1) / quiz.questions.length) * 100}%` }} /></div><div className="question-count">Question {index + 1} <span>of {quiz.questions.length}</span></div><h2 className="quiz-question">{q.question}</h2><div className="answer-list">{q.options.map((option, optionIndex) => <button key={`${optionIndex}-${option}`} className={answers[index] === optionIndex ? 'answer-button selected' : 'answer-button'} onClick={() => setAnswers((current) => current.map((answer, i) => i === index ? optionIndex : answer))}><span>{String.fromCharCode(65 + optionIndex)}</span><strong>{option}</strong></button>)}</div><div className="quiz-navigation"><button className="button secondary" disabled={index === 0} onClick={() => setIndex((value) => value - 1)}>← Previous</button>{index === quiz.questions.length - 1 ? <button className="button primary" onClick={submit}>Submit quiz</button> : <button className="button primary" onClick={() => setIndex((value) => value + 1)}>Next →</button>}</div></section>;
+  return <section className="page quiz-page"><div className="quiz-toolbar"><button className="back-button" onClick={onExit}>← Exit</button><div className={seconds < 60 ? 'timer danger' : 'timer'}>◷ {String(Math.floor(Math.max(0, seconds) / 60)).padStart(2, '0')}:{String(Math.max(0, seconds) % 60).padStart(2, '0')}</div></div><div className="progress-track"><span style={{ width: `${((index + 1) / quiz.questions.length) * 100}%` }} /></div><div className="question-count">Question {index + 1} <span>of {quiz.questions.length}</span></div><h2 className="quiz-question">{q.question}</h2><div className="answer-list">{q.options.map((option, optionIndex) => <button key={`${optionIndex}-${option}`} className={answers[index] === optionIndex ? 'answer-button selected' : 'answer-button'} onClick={() => setAnswers((current) => current.map((answer, i) => i === index ? optionIndex : answer))}><span>{String.fromCharCode(65 + optionIndex)}</span><strong>{option}</strong></button>)}</div><div className="quiz-navigation"><button className="button secondary" disabled={index === 0} onClick={() => setIndex((value) => value - 1)}>← Previous</button>{index === quiz.questions.length - 1 ? <button className="button primary" onClick={submit}>Submit quiz</button> : <button className="button primary" onClick={() => setIndex((value) => value + 1)}>Next →</button>)}</div></section>;
 }
 
 function ResultsPage({ quiz, onHome, onRetry }) {
@@ -431,8 +403,226 @@ function NotesPage({ notes, draft, setDraft, onBack, onCreate, onSave, onOpen, o
   return <section className="page notes-page"><div className="notes-toolbar"><div><button className="back-button" onClick={onBack}>← Back</button><div className="section-heading compact"><div className="eyebrow">STUDY NOTES</div><h2>Your notes</h2><p>Write, save, and ask AI to improve your notes.</p></div></div><button className="button primary" onClick={onCreate}>＋ New note</button></div><div className="notes-layout"><aside className="notes-list"><div className="notes-list-head"><strong>Saved notes</strong><span>{notes.length}</span></div>{notes.length === 0 ? <div className="empty-note">No notes yet.</div> : notes.map((note) => <button className={draft.id === note.id ? 'note-row selected' : 'note-row'} key={note.id} onClick={() => onOpen(note)}><strong>{note.title}</strong><small>{formatDate(note.updatedAt)}</small></button>)}</aside><section className="note-editor"><input className="note-title" value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Note title" /><textarea className="note-content" value={draft.content} onChange={(event) => setDraft({ ...draft, content: event.target.value })} placeholder="Start writing your study notes…" /><div className="editor-actions"><button className="button primary" onClick={onSave}>Save note</button>{selected && <button className="delete-button" onClick={() => onDelete(selected.id)}>Delete</button>}</div><div className="ai-tools-card"><div><div className="eyebrow">NOTE AI</div><h3>Improve this note</h3><p>Use AI to summarize, simplify, or turn your notes into a study guide.</p></div><div className="ai-tool-buttons"><button onClick={() => improve('Summarize these study notes into concise revision points.')}>Summarize</button><button onClick={() => improve('Rewrite these notes in simple, beginner-friendly language.')}>Simplify</button><button onClick={() => improve('Turn these notes into a clear study guide with headings and key ideas.')}>Study guide</button></div>{busy && <div className="ai-working">✦ Kenzy is working on your notes…</div>}{aiError && <div className="error-box">{aiError}</div>}{aiResult && <div className="ai-result"><div className="result-label">AI RESULT</div><pre>{aiResult}</pre></div>}</div></section></div></section>;
 }
 
+function SteamGamesFolder() {
+  const [open, setOpen] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  // Always require password on every visit / refresh
+  useEffect(() => {
+    try {
+      localStorage.removeItem(STEAM_UNLOCK_STORAGE);
+    } catch {
+      // ignore
+    }
+    setUnlocked(false);
+  }, []);
+
+  function handleUnlock() {
+    if (password === STEAM_KEY) {
+      setUnlocked(true);
+      setError('');
+      setPassword('');
+    } else {
+      setError('Wrong password.');
+    }
+  }
+
+  function handleLock() {
+    setUnlocked(false);
+    setPassword('');
+    setError('');
+    try {
+      localStorage.removeItem(STEAM_UNLOCK_STORAGE);
+    } catch {
+      // ignore
+    }
+  }
+
+  return (
+    <article className="steam-guide-card application-card" id="kenzy-steam-game-guide">
+      <div className="sg-folder">
+        <div
+          className="sg-folder-head"
+          role="button"
+          tabIndex={0}
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setOpen((v) => !v);
+            }
+          }}
+        >
+          <div className="sg-folder-left">
+            <svg className="sg-steam-icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+              <circle cx="12" cy="12" r="11" fill="#1b2838" />
+              <path fill="#66c0f4" d="M8.5 14.2c-.9 0-1.7.5-2.1 1.2L4 14.6v2.2l2.3 1.1c.4.7 1.2 1.2 2.1 1.2 1.4 0 2.5-1.1 2.5-2.5s-1.1-2.4-2.4-2.4zm0 3.6c-.7 0-1.2-.5-1.2-1.2s.5-1.2 1.2-1.2 1.2.5 1.2 1.2-.5 1.2-1.2 1.2z" />
+              <path fill="#c7d5e0" d="M18.2 7.2c-1.8 0-3.3 1.5-3.3 3.3 0 .3 0 .5.1.8l-2.6 1.8c-.4-.2-.8-.3-1.2-.3-1.5 0-2.7 1.2-2.7 2.7 0 .2 0 .4.1.6l2.4 1.1c.4.8 1.2 1.3 2.1 1.3 1.3 0 2.4-1.1 2.4-2.4 0-.2 0-.4-.1-.6l2.5-1.7c.4.2.9.3 1.3.3 1.8 0 3.3-1.5 3.3-3.3s-1.5-3.3-3.3-3.3zm-5.6 9.2c-.6 0-1.1-.5-1.1-1.1s.5-1.1 1.1-1.1 1.1.5 1.1 1.1-.5 1.1-1.1 1.1zm5.6-5.9c-1 0-1.8-.8-1.8-1.8s.8-1.8 1.8-1.8 1.8.8 1.8 1.8-.8 1.8-1.8 1.8z" />
+            </svg>
+            <div>
+              <span>Steam Games</span>
+              <small>SteamTools setup & depot install guide</small>
+            </div>
+          </div>
+          <span className={`sg-chevron${open ? ' open' : ''}`}>▾</span>
+        </div>
+
+        {open && (
+          <div className="sg-folder-body">
+            {!unlocked ? (
+              <div className="sg-lock-box">
+                <p>This folder is locked. Enter the password to unlock the Steam game install tutorial.</p>
+                <input
+                  className="sg-key-input"
+                  type="password"
+                  placeholder="Password"
+                  autoComplete="off"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleUnlock();
+                  }}
+                />
+                <button className="button primary sg-unlock-btn" type="button" onClick={handleUnlock}>
+                  Unlock
+                </button>
+                {error && <div className="sg-lock-error">{error}</div>}
+              </div>
+            ) : (
+              <div className="steam-guide-body">
+                <section>
+                  <div className="eyebrow">INSTALL</div>
+                  <h3>1. Install SteamTools</h3>
+                  <ol className="sg-steps">
+                    <li>Open the official SteamTools download page and click the purple <strong>Download Setup (Recommended)</strong> button.</li>
+                    <li>Run the installer and finish setup.</li>
+                    <li>Launch SteamTools. A floating Steam logo should appear on your desktop (see image 2).</li>
+                  </ol>
+                  <a className="download-button sg-download-btn" href="https://www.steamtools.net/download" target="_blank" rel="noreferrer">Download SteamTools ↗</a>
+                  <div className="steam-guide-images">
+                    <figure className="sg-fig">
+                      <div className="sg-mock sg-img1" style={{ margin: 12, height: 52, borderRadius: 26, background: '#a855f7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontWeight: 600, fontSize: 15, boxShadow: '0 4px 14px rgba(168,85,247,.4)' }}>
+                        <span style={{ fontSize: 18, lineHeight: 1 }}>↓</span> Download Setup (Recommended)
+                      </div>
+                      <figcaption>Image 1 — Click this purple button on the SteamTools site</figcaption>
+                    </figure>
+                    <figure className="sg-fig">
+                      <div className="sg-mock sg-img2" style={{ margin: 12, height: 100, borderRadius: 12, background: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#1a1a1a', border: '2px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" fill="#c7d5e0" />
+                            <path fill="#1b2838" d="M8.5 14.2c-.9 0-1.7.5-2.1 1.2L4 14.6v2.2l2.3 1.1c.4.7 1.2 1.2 2.1 1.2 1.4 0 2.5-1.1 2.5-2.5s-1.1-2.4-2.4-2.4zm0 3.6c-.7 0-1.2-.5-1.2-1.2s.5-1.2 1.2-1.2 1.2.5 1.2 1.2-.5 1.2-1.2 1.2z" />
+                            <path fill="#1b2838" d="M18.2 7.2c-1.8 0-3.3 1.5-3.3 3.3 0 .3 0 .5.1.8l-2.6 1.8c-.4-.2-.8-.3-1.2-.3-1.5 0-2.7 1.2-2.7 2.7 0 .2 0 .4.1.6l2.4 1.1c.4.8 1.2 1.3 2.1 1.3 1.3 0 2.4-1.1 2.4-2.4 0-.2 0-.4-.1-.6l2.5-1.7c.4.2.9.3 1.3.3 1.8 0 3.3-1.5 3.3-3.3s-1.5-3.3-3.3-3.3zm-5.6 9.2c-.6 0-1.1-.5-1.1-1.1s.5-1.1 1.1-1.1 1.1.5 1.1 1.1-.5 1.1-1.1 1.1zm5.6-5.9c-1 0-1.8-.8-1.8-1.8s.8-1.8 1.8-1.8 1.8.8 1.8 1.8-.8 1.8-1.8 1.8z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <figcaption>Image 2 — Floating SteamTools logo that appears after you launch the app</figcaption>
+                    </figure>
+                  </div>
+                </section>
+
+                <section>
+                  <div className="eyebrow">PICKING GAMES</div>
+                  <h3>2. Find the App ID on SteamDB</h3>
+                  <ol className="sg-steps">
+                    <li>Open <a href="https://steamdb.info/" target="_blank" rel="noreferrer"><strong>SteamDB</strong></a> (database of everything on Steam).</li>
+                    <li>Search for the game you want.</li>
+                    <li>Open the game page and copy the <strong>App ID</strong> (see image 3).</li>
+                  </ol>
+                  <a className="download-button" href="https://steamdb.info/" target="_blank" rel="noreferrer">Open SteamDB ↗</a>
+                  <div className="steam-guide-images">
+                    <figure className="sg-fig">
+                      <div className="sg-mock sg-img3" style={{ margin: 12, height: 48, borderRadius: 10, background: '#161820', border: '1px solid #2a2c36', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px', color: '#e6e6eb', fontSize: 14 }}>
+                        <span style={{ color: '#9698a5', fontWeight: 500 }}>App ID <span style={{ opacity: 0.6 }}>?</span></span>
+                        <span style={{ fontWeight: 700, letterSpacing: 0.3 }}>1778820</span>
+                      </div>
+                      <figcaption>Image 3 — Copy this App ID number from the SteamDB game page</figcaption>
+                    </figure>
+                  </div>
+                </section>
+
+                <section>
+                  <div className="eyebrow">DOWNLOAD LUA</div>
+                  <h3>3. Generate the Lua on DepotBox</h3>
+                  <ol className="sg-steps">
+                    <li>Open <a href="https://depotbox.org/" target="_blank" rel="noreferrer"><strong>DepotBox</strong></a> (Steam Depot Generator).</li>
+                    <li>Paste the App ID into the search field (image 4) and press <strong>Search</strong>.</li>
+                    <li>Select your game from the results and download the generated <strong>.lua</strong> file.</li>
+                    <li>You should see a confirmation toast: “Compiled 1 Lua scripts…” (image 5).</li>
+                  </ol>
+                  <a className="download-button" href="https://depotbox.org/" target="_blank" rel="noreferrer">Open DepotBox ↗</a>
+                  <div className="steam-guide-images">
+                    <figure className="sg-fig">
+                      <div className="sg-mock sg-img4" style={{ margin: 12, height: 44, borderRadius: 12, background: '#2a2c36', color: '#7d808c', display: 'flex', alignItems: 'center', padding: '0 18px', fontSize: 13, fontWeight: 500 }}>
+                        e.g., Half-Life or AppID 70
+                      </div>
+                      <figcaption>Image 4 — Paste the App ID into this DepotBox search box</figcaption>
+                    </figure>
+                    <figure className="sg-fig">
+                      <div className="sg-mock sg-img5" style={{ margin: 12, height: 44, borderRadius: 12, background: '#2a2c34', color: '#e8e8ec', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', fontSize: 12.5, fontWeight: 500 }}>
+                        Compiled 1 Lua scripts, will take effect after Steam restarts.
+                      </div>
+                      <figcaption>Image 5 — Confirmation after the Lua file is ready</figcaption>
+                    </figure>
+                  </div>
+                </section>
+
+                <section>
+                  <div className="eyebrow">APPLY & RESTART</div>
+                  <h3>4. Load the files into SteamTools</h3>
+                  <ol className="sg-steps">
+                    <li>If the download is a ZIP, extract it first.</li>
+                    <li>Select all extracted files and drag them onto the floating SteamTools window at once.</li>
+                    <li>Right-click the floating SteamTools window and choose <strong>Restart Steam</strong>.</li>
+                    <li>Steam restarts. The game should appear in your library — enjoy.</li>
+                  </ol>
+                </section>
+
+                <section className="sg-lock-again">
+                  <button className="button secondary" type="button" onClick={handleLock}>
+                    Lock folder again
+                  </button>
+                </section>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function ApplicationsPage({ onBack }) {
-  return <section className="page narrow-page"><button className="back-button" onClick={onBack}>← Back</button><div className="section-heading"><div className="eyebrow">APPLICATIONS</div><h2>Study applications</h2><p>Useful applications you can download and use alongside Kenzy. More links can be added later.</p></div><div className="applications-grid">{APPLICATIONS.map((app) => <article className="application-card" key={app.name}><div className="application-icon">{app.icon}</div><div className="application-body"><h3>{app.name}</h3><p>{app.description}</p>{app.url ? <a className="download-button" href={app.url} target="_blank" rel="noreferrer">Download ↗</a> : <span className="coming-label">Link coming soon</span>}</div></article>)}</div></section>;
+  return (
+    <section className="page narrow-page">
+      <button className="back-button" onClick={onBack}>← Back</button>
+      <div className="section-heading">
+        <div className="eyebrow">APPLICATIONS</div>
+        <h2>Study applications</h2>
+        <p>Useful applications you can download and use alongside Kenzy. More links can be added later.</p>
+      </div>
+      <div className="applications-grid">
+        {APPLICATIONS.map((app) => (
+          <article className="application-card" key={app.name}>
+            <div className="application-icon">{app.icon}</div>
+            <div className="application-body">
+              <h3>{app.name}</h3>
+              <p>{app.description}</p>
+              {app.url ? (
+                <a className="download-button" href={app.url} target="_blank" rel="noreferrer">Download ↗</a>
+              ) : (
+                <span className="coming-label">Link coming soon</span>
+              )}
+            </div>
+          </article>
+        ))}
+        <SteamGamesFolder />
+      </div>
+    </section>
+  );
 }
 
 function SettingsPage({ theme, setTheme, onBack }) {
