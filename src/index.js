@@ -13,6 +13,7 @@ import './large-upload';
 import './true-upload-limit';
 import './presentation-support';
 import './notes-stable.css';
+import './notes-ai-resilient';
 import './notes-stable';
 import './study-dashboard-polish.css';
 import './study-dashboard-polish';
