@@ -9,6 +9,7 @@ import './mobile-theme-fix.css';
 import './notes-stable.css';
 import './study-dashboard-polish.css';
 import './ai-workspace-v3.css';
+import './ai-chat-readability';
 
 const rootElement = document.getElementById('root');
 
@@ -56,42 +57,4 @@ if (typeof window !== 'undefined') {
   } else {
     window.setTimeout(startEnhancements, 0);
   }
-}
-
-function normalizeQuizInstructions() {
-  const inputs = Array.from(document.querySelectorAll('textarea[aria-label="Optional quiz instructions"]'));
-  if (!inputs.length) return;
-
-  const first = inputs[0];
-  const getPanel = (textarea) => textarea.closest('#kenzy-quiz-suggestion, .kenzy-suggestion-panel, .quiz-instructions-panel') || textarea.parentElement;
-  const primary = getPanel(first);
-  if (!primary) return;
-
-  inputs.slice(1).forEach((textarea) => {
-    const duplicate = getPanel(textarea);
-    if (duplicate && duplicate !== primary) duplicate.remove();
-  });
-
-  const eyebrow = primary.querySelector('.eyebrow');
-  const heading = primary.querySelector('strong');
-  const description = primary.querySelector('p, small');
-
-  if (eyebrow) eyebrow.textContent = 'OPTIONAL INSTRUCTIONS';
-  if (heading) heading.textContent = 'Customize how your quiz is generated';
-  if (description) description.textContent = 'Specify any additional preferences for difficulty, question format, topics to emphasize, or problem-solving requirements.';
-
-  first.placeholder = 'Example:\nCreate challenging questions that require problem-solving and critical thinking. Include a balanced mix of conceptual and application-based questions.';
-  first.maxLength = 1500;
-  first.style.boxSizing = 'border-box';
-}
-
-function watchQuizInstructions() {
-  normalizeQuizInstructions();
-  const observer = new MutationObserver(normalizeQuizInstructions);
-  observer.observe(document.body, { childList: true, subtree: true });
-  window.setTimeout(() => observer.disconnect(), 15000);
-}
-
-if (typeof window !== 'undefined') {
-  window.setTimeout(watchQuizInstructions, 0);
 }
