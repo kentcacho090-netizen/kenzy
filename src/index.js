@@ -20,6 +20,7 @@ import './study-dashboard-polish';
 import './stability-fixes';
 import './ai-workspace-v3.css';
 import './ai-workspace-v3';
+import './quiz-suggestion-cleanup';
 
 const root = createRoot(document.getElementById('root'));
 root.render(
