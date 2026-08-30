@@ -1,6 +1,5 @@
 const TUTORIAL_ID = 'kenzy-steam-install-tutorial';
 
-const STEAMTOOLS_URL = 'https://steamtools.net/';
 const STEAMDB_URL = 'https://steamdb.info/';
 
 // Screenshot-derived guide visuals supplied by the user, kept inline so the guide has no extra asset dependencies.
@@ -26,7 +25,7 @@ function createTutorial() {
       <div>
         <div class="eyebrow">APPLICATION GUIDE</div>
         <h2 id="steam-tutorial-title">Steam Game Install Tutorial</h2>
-        <p>A simple, foldable guide with the screenshots placed next to the steps they illustrate.</p>
+        <p>Follow the sections in order. Each section is foldable so the Applications page stays clean and easy to navigate.</p>
       </div>
       <div class="steam-tutorial-icon" aria-hidden="true">◉</div>
     </div>
@@ -38,19 +37,17 @@ function createTutorial() {
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">1</div>
             <div>
-              <h3>Install SteamTools</h3>
-              <p>First, open the official SteamTools website using the button below. On the website, click <strong>Download Setup (Recommended)</strong> to download the installer.</p>
-              <a class="download-button" href="${STEAMTOOLS_URL}" target="_blank" rel="noopener noreferrer">Open SteamTools ↗</a>
+              <h3>Install the required application</h3>
+              <p>Begin by downloading the application from its official website. On the download page, select the recommended setup option shown in the screenshot below.</p>
               ${guideImage(GUIDE_IMAGES.download, 'Screenshot showing the Download Setup (Recommended) button', 'guide-wide')}
             </div>
           </article>
-
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">2</div>
             <div>
-              <h3>Install and run SteamTools</h3>
-              <p>After the installer finishes downloading, install SteamTools and run it. When SteamTools is running, you should see the floating Steam interface shown in the screenshot below.</p>
-              ${guideImage(GUIDE_IMAGES.logo, 'Screenshot reference for the floating Steam interface', 'guide-logo')}
+              <h3>Install and run the application</h3>
+              <p>After the installer has finished downloading, complete the installation and launch the application. When it is running, use the screenshot below as the visual reference for the floating Steam interface.</p>
+              ${guideImage(GUIDE_IMAGES.logo, 'Screenshot reference showing the floating Steam interface', 'guide-logo')}
             </div>
           </article>
         </div>
@@ -62,64 +59,54 @@ function createTutorial() {
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">1</div>
             <div>
-              <h3>Find the game on SteamDB</h3>
+              <h3>Search for the game on SteamDB</h3>
               <p>Open <strong>SteamDB — Database of everything on Steam</strong> and search for the game you want.</p>
               <a class="download-button secondary-link" href="${STEAMDB_URL}" target="_blank" rel="noopener noreferrer">Open SteamDB ↗</a>
-              ${guideImage(GUIDE_IMAGES.search, 'SteamDB-style search field showing e.g., Half-Life or AppID 70', 'guide-wide')}
+              ${guideImage(GUIDE_IMAGES.search, 'Search field reference showing a game name or AppID can be entered', 'guide-wide')}
             </div>
           </article>
-
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">2</div>
             <div>
               <h3>Open the game and copy its App ID</h3>
-              <p>After you find the game, open its SteamDB page. Locate the <strong>App ID</strong> field and copy the number shown there. The number in the screenshot is only an example.</p>
-              ${guideImage(GUIDE_IMAGES.appid, 'SteamDB App ID example showing 1778820', 'guide-wide')}
+              <p>After finding the game, open its page and locate the <strong>App ID</strong>. Copy the number shown there before continuing.</p>
+              ${guideImage(GUIDE_IMAGES.appid, 'App ID screenshot reference showing the example 1778820', 'guide-wide')}
+              <p><strong>Example:</strong> the screenshot shows <strong>1778820</strong>. Your game will have a different App ID.</p>
             </div>
           </article>
-
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">3</div>
             <div>
-              <h3>Use the App ID with an authorized Steam installation</h3>
-              <p>Keep the App ID you copied available for the next step. Only use game files and tools for games you are authorized to access, and follow the applicable Steam or tool documentation for installation.</p>
+              <h3>Use the App ID with an authorized installation method</h3>
+              <p>Keep the App ID for the next step in your legitimate setup. For games you own or are authorized to access, use Steam's normal installation process or the official documentation for the software you are using.</p>
             </div>
           </article>
         </div>
       </details>
 
       <details class="steam-fold">
-        <summary><span class="steam-fold-number">03</span><span class="steam-fold-title">Finish the installation</span><span class="steam-fold-chevron">⌄</span></summary>
+        <summary><span class="steam-fold-number">03</span><span class="steam-fold-title">Restart Steam &amp; finish</span><span class="steam-fold-chevron">⌄</span></summary>
         <div class="steam-fold-content">
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">1</div>
             <div>
-              <h3>Use the authorized game installation method</h3>
-              <p>For a game you own, use Steam's normal installation process or the documentation provided by the authorized tool you are using. If a script or configuration is generated, follow that tool's instructions and make sure the files are from a trusted source.</p>
+              <h3>Restart Steam when required</h3>
+              <p>If the application says that a change will take effect after Steam restarts, follow its documented restart procedure. If necessary, fully exit Steam and launch it again.</p>
+              ${guideImage(GUIDE_IMAGES.toast, 'Screenshot showing the message that changes take effect after Steam restarts', 'guide-wide')}
             </div>
           </article>
-
           <article class="steam-step-card steam-step-wide">
             <div class="steam-step-number">2</div>
             <div>
-              <h3>Restart Steam when required</h3>
-              <p>If SteamTools reports that a change will take effect after Steam restarts, fully exit Steam and launch it again. The screenshot below shows the type of confirmation message to look for.</p>
-              ${guideImage(GUIDE_IMAGES.toast, 'Screenshot showing the message that Lua scripts take effect after Steam restarts', 'guide-wide')}
-            </div>
-          </article>
-
-          <article class="steam-step-card steam-step-wide">
-            <div class="steam-step-number">3</div>
-            <div>
-              <h3>Enjoy your game</h3>
-              <p>Once Steam has restarted, open your Library and verify that the game is installed and available normally.</p>
+              <h3>Verify the game</h3>
+              <p>After Steam restarts, open your Library and launch the game normally. If the game has a problem, use Steam's official troubleshooting and file-verification tools.</p>
             </div>
           </article>
         </div>
       </details>
     </div>
 
-    <div class="steam-tutorial-note"><strong>Important</strong><span>The App ID <strong>1778820</strong> shown in the screenshot is an example only. Use the App ID belonging to the game you selected.</span></div>
+    <div class="steam-tutorial-note"><strong>App ID example</strong><span>The number <strong>1778820</strong> in the reference image is an example only. Always use the App ID belonging to the game you selected.</span></div>
   `;
   return section;
 }
