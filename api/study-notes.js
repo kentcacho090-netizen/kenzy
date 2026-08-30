@@ -9,12 +9,9 @@ const PPT_TYPES = new Set([
   'application/vnd.ms-powerpoint',
 ]);
 
-// Prefer lightweight models for Notes AI, then fall back to broader models.
+// Use stable, supported Gemini models for Notes AI. Keep the list short so a
+// capacity outage does not waste the entire serverless execution window.
 const GEMINI_MODELS = [
-  'gemini-3.5-flash-lite',
-  'gemini-3.1-flash-lite',
-  'gemini-3.6-flash',
-  'gemini-3.5-flash',
   'gemini-2.5-flash-lite',
   'gemini-2.5-flash',
 ];
@@ -82,7 +79,7 @@ async function callGemini(apiKey, prompt, files, action) {
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: SYSTEM }] },
             contents: [{ role: 'user', parts }],
-            generationConfig: { maxOutputTokens: outputLimit(action, files.length > 0), thinkingConfig: { thinkingLevel: 'low' } },
+            generationConfig: { maxOutputTokens: outputLimit(action, files.length > 0) },
           }),
         });
         const text = await response.text();
@@ -125,7 +122,7 @@ async function callGeminiFilesApi(apiKey, prompt, files, action) {
     for (const model of GEMINI_MODELS) {
       for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
-          const response = await ai.models.generateContent({ model, contents, config: { maxOutputTokens: outputLimit(action, true), thinkingConfig: { thinkingLevel: 'low' } } });
+          const response = await ai.models.generateContent({ model, contents, config: { maxOutputTokens: outputLimit(action, true) } });
           if (response.text) return response.text;
           throw new Error('Kenzy received no result from Gemini.');
         } catch (error) {
