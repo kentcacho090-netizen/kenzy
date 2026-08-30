@@ -11,6 +11,12 @@ const PPT_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
+const GEMINI_MODELS = [
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-2.5-flash',
+];
 
 function validFile(file) {
   return file && ALLOWED.has(file.mimeType) && typeof file.data === 'string' && file.data.length > 0;
@@ -20,6 +26,18 @@ function base64Bytes(data) {
   const comma = data.indexOf(',');
   const clean = comma >= 0 ? data.slice(comma + 1) : data;
   return Math.floor(clean.length * 0.75);
+}
+
+function isRetryableGeminiStatus(status) {
+  return [429, 500, 502, 503, 504].includes(Number(status));
+}
+
+function getGeminiStatus(error) {
+  return Number(error?.status || error?.statusCode || error?.response?.status || 0);
+}
+
+async function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function readPrivateBlob(pathname) {
@@ -41,6 +59,7 @@ async function generateWithGeminiFiles(apiKey, prompt, files) {
   const { GoogleGenAI, createUserContent, createPartFromUri } = await import('@google/genai');
   const ai = new GoogleGenAI({ apiKey });
   const uploaded = [];
+  let lastError = null;
   try {
     for (const file of files) {
       const clean = String(file.data || '').split(',').pop();
@@ -48,20 +67,34 @@ async function generateWithGeminiFiles(apiKey, prompt, files) {
       const item = await ai.files.upload({ file: new Blob([buffer], { type: file.mimeType }), config: { mimeType: file.mimeType, displayName: file.name || 'kenzy-study-material' } });
       let status = item;
       for (let attempt = 0; attempt < 12 && status?.state === 'PROCESSING'; attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await sleep(500);
         status = await ai.files.get({ name: item.name });
       }
       if (!status?.uri || status?.state !== 'ACTIVE') throw new Error(`Gemini could not finish processing ${file.name || 'the presentation'}.`);
       uploaded.push(status);
     }
+
     const contents = createUserContent([...uploaded.map((file) => createPartFromUri(file.uri, file.mimeType)), prompt]);
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
-      contents,
-      config: { responseMimeType: 'application/json', maxOutputTokens: 32768, thinkingConfig: { thinkingLevel: 'low' } },
-    });
-    if (!response.text) throw new Error('Gemini returned no quiz data.');
-    return response.text;
+    for (const model of GEMINI_MODELS) {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const response = await ai.models.generateContent({
+            model,
+            contents,
+            config: { responseMimeType: 'application/json', maxOutputTokens: 32768, thinkingConfig: { thinkingLevel: 'low' } },
+          });
+          if (!response.text) throw new Error(`Gemini returned no quiz data from ${model}.`);
+          return response.text;
+        } catch (error) {
+          lastError = error;
+          const status = getGeminiStatus(error);
+          if (!isRetryableGeminiStatus(status) || attempt === 1) break;
+          await sleep(1000 * (attempt + 1));
+        }
+      }
+      console.warn(`Gemini model ${model} failed; trying fallback model.`, lastError?.message || lastError);
+    }
+    throw new Error(lastError?.message || 'All Gemini quiz-generation models were unavailable.');
   } finally {
     await Promise.allSettled(uploaded.filter((file) => file?.name).map((file) => ai.files.delete({ name: file.name })));
   }
@@ -123,28 +156,44 @@ export default async function handler(req, res) {
       text = await generateWithGeminiFiles(apiKey, prompt, files);
     } else {
       const contentsParts = [...files.map((file) => ({ inlineData: { mimeType: file.mimeType, data: file.data } })), { text: prompt }];
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: contentsParts }],
-          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: Math.min(32768, Math.max(8192, count * 650)), thinkingConfig: { thinkingLevel: 'low' } },
-        }),
-      });
-      const responseText = await response.text();
-      if (!response.ok) {
-        let message = 'Gemini could not generate the quiz.';
-        try { message = JSON.parse(responseText)?.error?.message || message; } catch {}
-        console.error('Gemini API error:', response.status, responseText);
-        return res.status(502).json({ error: `Gemini API error (${response.status}): ${message}` });
+      let lastStatus = 502;
+      let lastMessage = 'Gemini could not generate the quiz.';
+      let generatedText = null;
+
+      outer: for (const model of GEMINI_MODELS) {
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: contentsParts }],
+              generationConfig: { responseMimeType: 'application/json', maxOutputTokens: Math.min(32768, Math.max(8192, count * 650)), thinkingConfig: { thinkingLevel: 'low' } },
+            }),
+          });
+          const responseText = await response.text();
+          if (response.ok) {
+            let payload;
+            try { payload = JSON.parse(responseText); } catch { return res.status(502).json({ error: 'Gemini returned an unreadable response.' }); }
+            generatedText = payload?.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === 'string')?.text;
+            if (!generatedText) {
+              const reason = payload?.candidates?.[0]?.finishReason;
+              lastStatus = 502;
+              lastMessage = reason ? `Gemini returned no quiz data (finish reason: ${reason}).` : 'Gemini returned no quiz data.';
+              break;
+            }
+            break outer;
+          }
+
+          lastStatus = response.status;
+          try { lastMessage = JSON.parse(responseText)?.error?.message || lastMessage; } catch {}
+          console.error(`Gemini API error (${model}):`, response.status, responseText);
+          if (!isRetryableGeminiStatus(response.status) || attempt === 1) break;
+          await sleep(1000 * (attempt + 1));
+        }
       }
-      let payload;
-      try { payload = JSON.parse(responseText); } catch { return res.status(502).json({ error: 'Gemini returned an unreadable response.' }); }
-      text = payload?.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === 'string')?.text;
-      if (!text) {
-        const reason = payload?.candidates?.[0]?.finishReason;
-        return res.status(502).json({ error: reason ? `Gemini returned no quiz data (finish reason: ${reason}).` : 'Gemini returned no quiz data.' });
-      }
+
+      if (!generatedText) return res.status(502).json({ error: `Gemini API error (${lastStatus}): ${lastMessage}` });
+      text = generatedText;
     }
 
     let result;
