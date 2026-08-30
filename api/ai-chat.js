@@ -10,11 +10,9 @@ const PPT_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'application/vnd.ms-powerpoint',
 ]);
-const GEMINI_MODELS = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+const GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
 
-function approxBytes(data) {
-  return Math.floor((String(data || '').replace(/^data:[^,]+,/, '').length * 3) / 4);
-}
+function approxBytes(data) { return Math.floor((String(data || '').replace(/^data:[^,]+,/, '').length * 3) / 4); }
 function retryable(status) { return [429, 500, 502, 503, 504].includes(Number(status)); }
 function statusOf(error) { return Number(error?.status || error?.statusCode || error?.response?.status || 0); }
 async function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
@@ -44,30 +42,38 @@ async function generateText(apiKey, messages) {
   const history = messages.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-8);
   let lastMessage = 'Gemini could not answer right now.';
   let lastStatus = 502;
-
   for (const model of GEMINI_MODELS) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: history.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content.slice(0, 5000) }] })),
-          generationConfig: { maxOutputTokens: 700 },
-        }),
-      });
-      const text = await response.text();
-      if (response.ok) {
-        const data = JSON.parse(text);
-        const reply = data?.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === 'string')?.text;
-        if (reply) return reply;
-        lastMessage = 'Kenzy received no answer from Gemini.';
-        break;
-      }
-      lastStatus = response.status;
-      try { lastMessage = JSON.parse(text)?.error?.message || lastMessage; } catch {}
-      if (!retryable(response.status) || attempt === 1) break;
-      await sleep(1000 * (attempt + 1));
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 45000);
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: 'POST', signal: controller.signal,
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: history.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content.slice(0, 5000) }] })),
+            generationConfig: { maxOutputTokens: 700 },
+          }),
+        });
+        const text = await response.text();
+        if (response.ok) {
+          const data = JSON.parse(text);
+          const reply = data?.candidates?.[0]?.content?.parts?.find((part) => typeof part.text === 'string')?.text;
+          if (reply) return reply;
+          lastMessage = 'Kenzy received no answer from Gemini.';
+          break;
+        }
+        lastStatus = response.status;
+        try { lastMessage = JSON.parse(text)?.error?.message || lastMessage; } catch {}
+        if (!retryable(response.status) || attempt === 1) break;
+        await sleep(1000 * (attempt + 1));
+      } catch (error) {
+        lastStatus = statusOf(error) || 502;
+        lastMessage = error?.name === 'AbortError' ? 'Kenzy took too long to answer.' : (error?.message || lastMessage);
+        if (!retryable(lastStatus) || attempt === 1) break;
+        await sleep(1000 * (attempt + 1));
+      } finally { clearTimeout(timeout); }
     }
   }
   throw new Error(`Gemini API error (${lastStatus}): ${lastMessage}`);
@@ -97,15 +103,14 @@ async function generateWithGeminiFiles(apiKey, messages, files) {
           throw new Error('Kenzy received no answer from Gemini.');
         } catch (error) {
           lastError = error;
-          if (!retryable(statusOf(error)) || attempt === 1) break;
+          const status = statusOf(error);
+          if (!retryable(status) || attempt === 1) break;
           await sleep(1000 * (attempt + 1));
         }
       }
     }
     throw new Error(lastError?.message || 'All Gemini chat models were unavailable.');
-  } finally {
-    await Promise.allSettled(uploaded.filter((file) => file?.name).map((file) => ai.files.delete({ name: file.name })));
-  }
+  } finally { await Promise.allSettled(uploaded.filter((file) => file?.name).map((file) => ai.files.delete({ name: file.name }))); }
 }
 
 export default async function handler(req, res) {
