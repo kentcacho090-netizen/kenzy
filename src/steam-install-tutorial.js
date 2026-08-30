@@ -25,37 +25,101 @@ function createTutorial() {
     <div class="steam-tutorial-header">
       <div>
         <div class="eyebrow">APPLICATION GUIDE</div>
-        <h2 id="steam-tutorial-title">SteamTools Game Setup Guide</h2>
-        <p>Follow the screenshots in order. Each section can be opened only when you need it.</p>
+        <h2 id="steam-tutorial-title">Steam Game Install Tutorial</h2>
+        <p>A simple, foldable guide with the screenshots placed next to the steps they illustrate.</p>
       </div>
       <div class="steam-tutorial-icon" aria-hidden="true">◉</div>
     </div>
+
     <div class="steam-folds">
-      <details class="steam-fold"><summary><span class="steam-fold-number">01</span><span class="steam-fold-title">Download &amp; install SteamTools</span><span class="steam-fold-chevron">⌄</span></summary><div class="steam-fold-content">
-        <article class="steam-step-card steam-step-wide"><div class="steam-step-number">1</div><div><h3>Open SteamTools.net</h3><p>Use the button below to open the SteamTools website.</p><a class="download-button" href="${STEAMTOOLS_URL}" target="_blank" rel="noopener noreferrer">Open SteamTools.net ↗</a></div></article>
-        <article class="steam-step-card steam-step-wide"><div class="steam-step-number">2</div><div><h3>Click “Download Setup (Recommended)”</h3><p>On the download page, use the purple <strong>Download Setup (Recommended)</strong> button shown below.</p>${guideImage(GUIDE_IMAGES.download, 'Screenshot reference for the Download Setup (Recommended) button', 'guide-wide')}</div></article>
-        <article class="steam-step-card"><div class="steam-step-number">3</div><div><h3>Install SteamTools</h3><p>Run the downloaded installer and complete the installation. Then launch SteamTools.</p></div></article>
-        <article class="steam-step-card"><div class="steam-step-number">4</div><div><h3>Wait for Steam to appear</h3><p>When Steam starts or restarts, you may briefly see the Steam logo while the client loads.</p>${guideImage(GUIDE_IMAGES.logo, 'Steam loading logo screenshot reference', 'guide-logo')}</div></article>
-      </div></details>
-      <details class="steam-fold"><summary><span class="steam-fold-number">02</span><span class="steam-fold-title">Find the game's App ID</span><span class="steam-fold-chevron">⌄</span></summary><div class="steam-fold-content">
-        <article class="steam-step-card steam-step-wide"><div class="steam-step-number">1</div><div><h3>Search for the game</h3><p>Open SteamDB and search for the game you want. The search field accepts a game name or App ID.</p><a class="download-button secondary-link" href="${STEAMDB_URL}" target="_blank" rel="noopener noreferrer">Open SteamDB ↗</a>${guideImage(GUIDE_IMAGES.search, 'Search field screenshot reference showing e.g., Half-Life or AppID 70', 'guide-wide')}</div></article>
-        <article class="steam-step-card steam-step-wide"><div class="steam-step-number">2</div><div><h3>Open the game entry and locate App ID</h3><p>Open the matching application page and look for the <strong>App ID</strong> field.</p>${guideImage(GUIDE_IMAGES.appid, 'App ID screenshot reference showing 1778820', 'guide-wide')}</div></article>
-        <article class="steam-step-card steam-step-wide"><div class="steam-step-number">3</div><div><h3>Copy the App ID</h3><p>Copy the number shown next to <strong>App ID</strong>. The screenshot example shows <strong>1778820</strong>; your game's number will be different.</p></div></article>
-      </div></details>
-      <details class="steam-fold"><summary><span class="steam-fold-number">03</span><span class="steam-fold-title">Enter the App ID</span><span class="steam-fold-chevron">⌄</span></summary><div class="steam-fold-content">
-        <article class="steam-step-card steam-step-wide"><div class="steam-step-number">1</div><div><h3>Paste the App ID into the search box</h3><p>Return to the tool and enter the App ID you copied. Follow the same field layout shown below.</p>${guideImage(GUIDE_IMAGES.search, 'Search box screenshot reference', 'guide-wide')}</div></article>
-        <article class="steam-step-card steam-step-wide"><div class="steam-step-number">2</div><div><h3>Select the matching game</h3><p>Double-check the title and App ID before continuing so you work with the intended Steam application.</p></div></article>
-      </div></details>
-      <details class="steam-fold"><summary><span class="steam-fold-number">04</span><span class="steam-fold-title">Compile the Lua script</span><span class="steam-fold-chevron">⌄</span></summary><div class="steam-fold-content">
-        <article class="steam-step-card steam-step-wide"><div class="steam-step-number">1</div><div><h3>Compile the selected Lua script</h3><p>Use the tool's compile action for the selected application and wait for it to finish.</p></div></article>
-        <article class="steam-step-card steam-step-wide"><div class="steam-step-number">2</div><div><h3>Confirm the success message</h3><p>Use the screenshot below as the visual reference for a successful compilation.</p>${guideImage(GUIDE_IMAGES.toast, 'Compilation success toast screenshot reference', 'guide-wide')}</div></article>
-      </div></details>
-      <details class="steam-fold"><summary><span class="steam-fold-number">05</span><span class="steam-fold-title">Restart Steam &amp; finish</span><span class="steam-fold-chevron">⌄</span></summary><div class="steam-fold-content">
-        <article class="steam-step-card"><div class="steam-step-number">1</div><div><h3>Fully restart Steam</h3><p>Exit Steam completely, then launch it again. The compilation message says the Lua scripts take effect after Steam restarts.</p></div></article>
-        <article class="steam-step-card"><div class="steam-step-number">2</div><div><h3>Check the result</h3><p>After Steam has restarted, open the relevant game and verify that the setup is available.</p></div></article>
-      </div></details>
+      <details class="steam-fold">
+        <summary><span class="steam-fold-number">01</span><span class="steam-fold-title">Install section</span><span class="steam-fold-chevron">⌄</span></summary>
+        <div class="steam-fold-content">
+          <article class="steam-step-card steam-step-wide">
+            <div class="steam-step-number">1</div>
+            <div>
+              <h3>Install SteamTools</h3>
+              <p>First, open the official SteamTools website using the button below. On the website, click <strong>Download Setup (Recommended)</strong> to download the installer.</p>
+              <a class="download-button" href="${STEAMTOOLS_URL}" target="_blank" rel="noopener noreferrer">Open SteamTools ↗</a>
+              ${guideImage(GUIDE_IMAGES.download, 'Screenshot showing the Download Setup (Recommended) button', 'guide-wide')}
+            </div>
+          </article>
+
+          <article class="steam-step-card steam-step-wide">
+            <div class="steam-step-number">2</div>
+            <div>
+              <h3>Install and run SteamTools</h3>
+              <p>After the installer finishes downloading, install SteamTools and run it. When SteamTools is running, you should see the floating Steam interface shown in the screenshot below.</p>
+              ${guideImage(GUIDE_IMAGES.logo, 'Screenshot reference for the floating Steam interface', 'guide-logo')}
+            </div>
+          </article>
+        </div>
+      </details>
+
+      <details class="steam-fold">
+        <summary><span class="steam-fold-number">02</span><span class="steam-fold-title">Picking games</span><span class="steam-fold-chevron">⌄</span></summary>
+        <div class="steam-fold-content">
+          <article class="steam-step-card steam-step-wide">
+            <div class="steam-step-number">1</div>
+            <div>
+              <h3>Find the game on SteamDB</h3>
+              <p>Open <strong>SteamDB — Database of everything on Steam</strong> and search for the game you want.</p>
+              <a class="download-button secondary-link" href="${STEAMDB_URL}" target="_blank" rel="noopener noreferrer">Open SteamDB ↗</a>
+              ${guideImage(GUIDE_IMAGES.search, 'SteamDB-style search field showing e.g., Half-Life or AppID 70', 'guide-wide')}
+            </div>
+          </article>
+
+          <article class="steam-step-card steam-step-wide">
+            <div class="steam-step-number">2</div>
+            <div>
+              <h3>Open the game and copy its App ID</h3>
+              <p>After you find the game, open its SteamDB page. Locate the <strong>App ID</strong> field and copy the number shown there. The number in the screenshot is only an example.</p>
+              ${guideImage(GUIDE_IMAGES.appid, 'SteamDB App ID example showing 1778820', 'guide-wide')}
+            </div>
+          </article>
+
+          <article class="steam-step-card steam-step-wide">
+            <div class="steam-step-number">3</div>
+            <div>
+              <h3>Use the App ID with an authorized Steam installation</h3>
+              <p>Keep the App ID you copied available for the next step. Only use game files and tools for games you are authorized to access, and follow the applicable Steam or tool documentation for installation.</p>
+            </div>
+          </article>
+        </div>
+      </details>
+
+      <details class="steam-fold">
+        <summary><span class="steam-fold-number">03</span><span class="steam-fold-title">Finish the installation</span><span class="steam-fold-chevron">⌄</span></summary>
+        <div class="steam-fold-content">
+          <article class="steam-step-card steam-step-wide">
+            <div class="steam-step-number">1</div>
+            <div>
+              <h3>Use the authorized game installation method</h3>
+              <p>For a game you own, use Steam's normal installation process or the documentation provided by the authorized tool you are using. If a script or configuration is generated, follow that tool's instructions and make sure the files are from a trusted source.</p>
+            </div>
+          </article>
+
+          <article class="steam-step-card steam-step-wide">
+            <div class="steam-step-number">2</div>
+            <div>
+              <h3>Restart Steam when required</h3>
+              <p>If SteamTools reports that a change will take effect after Steam restarts, fully exit Steam and launch it again. The screenshot below shows the type of confirmation message to look for.</p>
+              ${guideImage(GUIDE_IMAGES.toast, 'Screenshot showing the message that Lua scripts take effect after Steam restarts', 'guide-wide')}
+            </div>
+          </article>
+
+          <article class="steam-step-card steam-step-wide">
+            <div class="steam-step-number">3</div>
+            <div>
+              <h3>Enjoy your game</h3>
+              <p>Once Steam has restarted, open your Library and verify that the game is installed and available normally.</p>
+            </div>
+          </article>
+        </div>
+      </details>
     </div>
-    <div class="steam-tutorial-note"><strong>Screenshot guide</strong><span>The visual references are positioned beside the exact actions they illustrate. The App ID shown in the reference is only an example.</span></div>
+
+    <div class="steam-tutorial-note"><strong>Important</strong><span>The App ID <strong>1778820</strong> shown in the screenshot is an example only. Use the App ID belonging to the game you selected.</span></div>
   `;
   return section;
 }
