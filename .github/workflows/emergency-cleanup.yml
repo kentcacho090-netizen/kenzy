@@ -1,0 +1,100 @@
+name: Emergency Kenzy Cleanup
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Remove duplicate quiz panels and disable legacy injector
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('src/KenzyApp.js')
+          text = path.read_text(encoding='utf-8')
+          marker = '    <div className="settings-grid"><Range label="Questions" value={count} min={1} max={100} onChange={setCount} /><Range label="Time limit" value={minutes} min={1} max={180} suffix="min" onChange={setMinutes} /></div>'
+
+          panel = '''    <div id="kenzy-quiz-suggestion" className="quiz-instructions-panel">
+      <div className="eyebrow">OPTIONAL INSTRUCTIONS</div>
+      <strong>Customize how your quiz is generated</strong>
+      <p>Specify any additional preferences for difficulty, question format, topics to emphasize, or problem-solving requirements.</p>
+      <textarea
+        value={suggestion}
+        onChange={(event) => setSuggestion(event.target.value.slice(0, 1500))}
+        rows={4}
+        maxLength={1500}
+        placeholder={'Example:\nCreate challenging questions that require problem-solving and critical thinking. Include a balanced mix of conceptual and application-based questions.'}
+        aria-label="Optional quiz instructions"
+      />
+      <div className="quiz-instructions-count">{suggestion.length}/1500</div>
+    </div>\n'''
+
+          if marker not in text:
+              raise SystemExit('CreatePage settings marker not found')
+
+          before, sep, after = text.partition(marker)
+
+          block_pattern = re.compile(
+              r'\n    <div(?:\s+id="kenzy-quiz-suggestion")?[^>]*>\s*'
+              r'<div className="eyebrow">OPTIONAL (?:SUGGESTION|INSTRUCTIONS)</div>.*?'
+              r'\n    </div>\n',
+              re.DOTALL,
+          )
+
+          cleaned = block_pattern.sub('\n', before)
+          cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+          text = cleaned + panel + sep + after
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Disable legacy quiz-upgrade suggestion injection
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('src/quiz-upgrade.js')
+          text = path.read_text(encoding='utf-8')
+          start = text.find('function setupSuggestion(page)')
+          end = text.find('\nfunction installSuggestionFetch()', start)
+          if start != -1 and end != -1:
+              replacement = "function setupSuggestion(page){return;}"
+              text = text[:start] + replacement + text[end:]
+              path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Add dedicated quiz instruction styling
+        shell: bash
+        run: |
+          cat >> src/Kenzy.css <<'CSS'
+
+          .quiz-instructions-panel { margin-top: 16px; padding: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; }
+          .quiz-instructions-panel > strong { display:block; margin-top:6px; color:var(--text); font-size:16px; }
+          .quiz-instructions-panel > p { margin:6px 0 12px; color:var(--muted); line-height:1.5; font-size:13px; }
+          .quiz-instructions-panel textarea { width:100%; box-sizing:border-box; resize:vertical; min-height:105px; border:1px solid var(--border); border-radius:13px; padding:13px; background:var(--surface2); color:var(--text); outline:none; line-height:1.5; font:inherit; }
+          .quiz-instructions-panel textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(91,85,232,.12); }
+          .quiz-instructions-count { text-align:right; margin-top:6px; color:var(--muted); font-size:11px; }
+          CSS
+
+      - name: Validate and commit
+        shell: bash
+        run: |
+          npm ci
+          npm run build
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/KenzyApp.js src/quiz-upgrade.js src/Kenzy.css
+          git rm -f .github/workflows/emergency-cleanup.yml
+          git commit -m "Clean Quiz Maker UI and remove duplicate injectors"
+          git push
