@@ -1,37 +1,193 @@
-.steam-guide-card{margin-top:16px;overflow:hidden}
-.steam-guide-body{display:grid;gap:0}
-.steam-guide-body>section{padding:20px;border-top:1px solid var(--border)}
-.steam-guide-body>section:first-child{border-top:0}
-.steam-guide-body h3{margin:5px 0 10px;font-size:18px}
-.steam-guide-body p{margin:0;color:var(--muted);font-size:13px;line-height:1.7}
-.steam-guide-body .download-button{margin-top:14px}
-.steam-guide-card .ai-badge{white-space:nowrap}
-.sg-steps{margin:0 0 4px;padding-left:20px;color:var(--muted);font-size:13px;line-height:1.75}
-.sg-steps li{margin:0 0 4px}
-.sg-steps strong{color:var(--text);font-weight:600}
-.steam-guide-images{display:grid;gap:12px;margin-top:14px}
-.sg-fig{margin:0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.sg-fig figcaption{padding:8px 12px;font-size:12px;color:var(--muted)}
-.sg-mock{margin:12px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
-.sg-download-btn{background:#a855f7;color:#fff;height:48px;border-radius:24px;box-shadow:0 4px 14px rgba(168,85,247,.35)}
-.sg-appid{background:#161820;height:48px;justify-content:flex-start;padding:0 16px;gap:24px;color:#e6e6eb}
-.sg-appid .sg-label{color:#9698a5;font-weight:500}
-.sg-appid .sg-value{font-weight:700;letter-spacing:.3px}
-.sg-search{background:#2a2c36;height:44px;color:#7d808c;font-weight:500;justify-content:flex-start;padding:0 18px;border-radius:12px}
-.sg-toast{background:#2a2c34;height:44px;color:#e8e8ec;font-weight:500;border-radius:12px;padding:0 16px;font-size:12.5px}
-.sg-folder .sg-folder-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;cursor:pointer;user-select:none}
-.sg-folder-left{display:flex;align-items:center;gap:12px;min-width:0}
-.sg-steam-icon{display:block;width:28px;height:30px;object-fit:contain;flex-shrink:0}
-.sg-folder-left span{display:block;font-weight:600;color:var(--text)}
-.sg-folder-left small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
-.sg-chevron{color:var(--muted);font-size:14px}
-.sg-chevron.open{color:var(--text)}
-.sg-folder-body{border-top:1px solid var(--border)}
-.sg-folder-body[hidden]{display:none}
-.sg-lock-box{padding:18px 20px;display:grid;gap:10px}
-.sg-lock-box p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
-.sg-key-input{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:12px;padding:12px 14px;background:var(--surface2);color:var(--text);font-size:14px;outline:none}
-.sg-key-input:focus{border-color:var(--text)}
-.sg-unlock-btn{margin-top:2px;justify-self:start}
-.sg-lock-error{color:#e35d6a;font-size:12px}
-.sg-lock-again{padding:12px 20px 18px;border-top:1px solid var(--border)}
+/* Steam Games folder — Applications page only */
+.steam-guide-card {
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.steam-guide-body {
+  display: grid;
+  gap: 0;
+}
+
+.steam-guide-body > section {
+  padding: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.steam-guide-body > section:first-child {
+  border-top: 0;
+}
+
+.steam-guide-body h3 {
+  margin: 5px 0 10px;
+  font-size: 18px;
+}
+
+.steam-guide-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.steam-guide-body .download-button {
+  margin-top: 14px;
+}
+
+.sg-steps {
+  margin: 0 0 4px;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.sg-steps li {
+  margin: 0 0 4px;
+}
+
+.sg-steps strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.sg-steps a {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.steam-guide-images {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.sg-fig {
+  margin: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sg-fig figcaption {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sg-mock {
+  margin: 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sg-download-btn {
+  background: #a855f7 !important;
+  color: #fff !important;
+  height: 48px;
+  border-radius: 24px;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
+}
+
+/* Foldable folder */
+.sg-folder .sg-folder-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sg-folder-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sg-steam-icon {
+  display: block;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.sg-folder-left span {
+  display: block;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sg-folder-left small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.sg-chevron {
+  color: var(--muted);
+  font-size: 14px;
+  transition: transform 0.15s ease;
+}
+
+.sg-chevron.open {
+  color: var(--text);
+  transform: rotate(180deg);
+}
+
+.sg-folder-body {
+  border-top: 1px solid var(--border);
+}
+
+/* Password lock */
+.sg-lock-box {
+  padding: 18px 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.sg-lock-box p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.sg-key-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+
+.sg-key-input:focus {
+  border-color: var(--text);
+}
+
+.sg-unlock-btn {
+  margin-top: 2px;
+  justify-self: start;
+}
+
+.sg-lock-error {
+  color: #e35d6a;
+  font-size: 12px;
+}
+
+.sg-lock-again {
+  padding: 12px 20px 18px;
+  border-top: 1px solid var(--border);
+}
