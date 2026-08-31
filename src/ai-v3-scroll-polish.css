@@ -38,6 +38,27 @@
 .ai-page:has(.ai-v3-shell) .ai-v3-status-message{flex:0 0 auto;}
 .ai-page:has(.ai-v3-shell) .ai-v3-form{flex:0 0 auto;}
 
+/* Readable conversation layout: wider bubbles, comfortable spacing, preserved AI line breaks. */
+.ai-page:has(.ai-v3-shell) .ai-v3-message{
+  max-width:min(92%,900px);
+}
+.ai-page:has(.ai-v3-shell) .ai-v3-bubble{
+  padding:16px 18px!important;
+  font-size:15px!important;
+  line-height:1.75!important;
+  letter-spacing:0!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+  text-wrap:pretty;
+}
+.ai-page:has(.ai-v3-shell) .ai-v3-message.assistant .ai-v3-bubble{
+  max-width:100%;
+}
+.ai-page:has(.ai-v3-shell) .ai-v3-message.user .ai-v3-bubble{
+  max-width:min(760px,100%);
+}
+
 @media(max-width:860px){
   .ai-page:has(.ai-v3-shell){height:calc(100dvh - 70px)!important;}
   .ai-page:has(.ai-v3-shell) .ai-v3-shell{
@@ -47,6 +68,7 @@
     gap:10px;
   }
   .ai-page:has(.ai-v3-shell) .ai-v3-chat{min-height:0!important;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-message{max-width:94%;}
 }
 
 @media(max-width:560px){
@@ -75,16 +97,17 @@
   .ai-page:has(.ai-v3-shell) .ai-v3-provider{padding:6px 8px;font-size:9px;}
   .ai-page:has(.ai-v3-shell) .ai-v3-messages{
     min-height:0!important;
-    padding:10px 9px 30px!important;
-    gap:13px;
+    padding:14px 10px 34px!important;
+    gap:16px;
   }
-  .ai-page:has(.ai-v3-shell) .ai-v3-message{max-width:97%;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-message{max-width:96%;gap:9px;}
   .ai-page:has(.ai-v3-shell) .ai-v3-bubble{
-    padding:10px 11px;
-    font-size:13px;
-    line-height:1.62;
-    overflow-wrap:anywhere;
-    word-break:break-word;
+    padding:14px 15px!important;
+    font-size:14px!important;
+    line-height:1.75!important;
+    white-space:pre-wrap!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
   }
   .ai-page:has(.ai-v3-shell) .ai-v3-form{padding:7px 8px 8px;}
   .ai-page:has(.ai-v3-shell) .ai-v3-form textarea{
@@ -107,4 +130,5 @@
   .ai-page:has(.ai-v3-shell) .ai-v3-chat-head{padding:10px 11px;}
   .ai-page:has(.ai-v3-shell) .ai-v3-provider{display:none;}
   .ai-page:has(.ai-v3-shell) .ai-v3-quick button:nth-child(3){display:none;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-bubble{font-size:13.5px!important;line-height:1.72!important;padding:13px 14px!important;}
 }
