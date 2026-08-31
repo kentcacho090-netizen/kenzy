@@ -1,23 +1,110 @@
-/* Keep the AI conversation large and make only the conversation history scroll. */
-.ai-page:has(.ai-v3-shell){min-height:0!important;height:auto!important;}
-.ai-page:has(.ai-v3-shell) .ai-v3-shell{height:calc(100dvh - 92px);min-height:0!important;max-height:calc(100dvh - 92px);overflow:hidden;}
-.ai-page:has(.ai-v3-shell) .ai-v3-chat{height:100%;min-height:0!important;max-height:100%;overflow:hidden;}
-.ai-page:has(.ai-v3-shell) .ai-v3-messages{min-height:0!important;height:auto;flex:1 1 auto;overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;}
-.ai-page:has(.ai-v3-shell) .ai-v3-form{flex:0 0 auto;}
-@media (max-width:860px){
-  .ai-page:has(.ai-v3-shell) .ai-v3-shell{height:calc(100dvh - 76px);max-height:calc(100dvh - 76px);}
+/* AI v3 mobile/desktop layout polish: the page itself must not steal height from the chat. */
+.ai-page:has(.ai-v3-shell){
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:calc(100dvh - 70px)!important;
+  overflow:hidden!important;
 }
-@media (max-width:560px){
-  .ai-page:has(.ai-v3-shell) .ai-v3-shell{width:calc(100% - 20px);height:calc(100dvh - 68px);max-height:calc(100dvh - 68px);padding-bottom:0;}
+.ai-page:has(.ai-v3-shell) .ai-v3-shell{
+  width:min(1120px,calc(100% - 32px));
+  height:calc(100dvh - 70px)!important;
+  min-height:0!important;
+  max-height:none!important;
+  box-sizing:border-box;
+  padding:44px 0 12px!important;
+  overflow:hidden!important;
+}
+.ai-page:has(.ai-v3-shell) .ai-v3-chat{
+  min-height:0!important;
+  height:100%!important;
+  max-height:none!important;
+  overflow:hidden!important;
+}
+.ai-page:has(.ai-v3-shell) .ai-v3-messages{
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  flex:1 1 auto!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-gutter:stable;
+  padding-bottom:24px;
+}
+.ai-page:has(.ai-v3-shell) .ai-v3-status-message{flex:0 0 auto;}
+.ai-page:has(.ai-v3-shell) .ai-v3-form{flex:0 0 auto;}
+
+@media(max-width:860px){
+  .ai-page:has(.ai-v3-shell){height:calc(100dvh - 70px)!important;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-shell{
+    width:100%;
+    height:calc(100dvh - 70px)!important;
+    padding:46px 10px 10px!important;
+    gap:10px;
+  }
   .ai-page:has(.ai-v3-shell) .ai-v3-chat{min-height:0!important;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-messages{padding:12px 10px;min-height:0!important;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head{padding:14px 15px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head h2{font-size:21px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-form{padding:8px 10px 10px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-form textarea{min-height:52px;max-height:110px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-compose{flex-direction:row;align-items:center;gap:7px;margin-top:6px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-compose>div{gap:5px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-attach,.ai-page:has(.ai-v3-shell) .ai-v3-quick button{padding:7px 8px;font-size:9px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-quick{gap:5px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-send{width:auto;min-width:70px;padding:9px 11px;}
+}
+
+@media(max-width:560px){
+  .ai-page:has(.ai-v3-shell){
+    height:calc(100dvh - 70px)!important;
+    overflow:hidden!important;
+  }
+  .ai-page:has(.ai-v3-shell) .ai-v3-shell{
+    width:100%;
+    height:calc(100dvh - 70px)!important;
+    max-height:none!important;
+    padding:42px 6px 6px!important;
+    gap:6px;
+  }
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat{
+    height:100%!important;
+    min-height:0!important;
+    border-radius:20px;
+  }
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head{
+    padding:11px 13px;
+    min-height:58px;
+  }
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head h2{font-size:20px;margin:3px 0 2px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head p{font-size:10px;line-height:1.3;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-provider{padding:6px 8px;font-size:9px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-messages{
+    min-height:0!important;
+    padding:10px 9px 30px!important;
+    gap:13px;
+  }
+  .ai-page:has(.ai-v3-shell) .ai-v3-message{max-width:97%;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-bubble{
+    padding:10px 11px;
+    font-size:13px;
+    line-height:1.62;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+  .ai-page:has(.ai-v3-shell) .ai-v3-form{padding:7px 8px 8px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-form textarea{
+    min-height:46px;
+    max-height:96px;
+    resize:none;
+    line-height:1.35;
+  }
+  .ai-page:has(.ai-v3-shell) .ai-v3-compose{margin-top:6px;gap:6px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-compose>div{width:100%;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-quick{gap:4px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-quick button,
+  .ai-page:has(.ai-v3-shell) .ai-v3-attach{padding:6px 7px;font-size:9px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-send{width:100%;min-height:38px;padding:8px 10px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-status-message{margin:0 8px 4px;min-height:32px;padding:7px 9px;font-size:10px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-sidebar{max-height:34vh;}
+}
+
+@media(max-width:380px){
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head{padding:10px 11px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-provider{display:none;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-quick button:nth-child(3){display:none;}
 }
