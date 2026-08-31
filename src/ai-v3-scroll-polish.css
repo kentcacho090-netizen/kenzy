@@ -1,14 +1,23 @@
-/* Keep the AI conversation inside the chat card. */
+/* Keep the AI conversation large and make only the conversation history scroll. */
 .ai-page:has(.ai-v3-shell){min-height:0!important;height:auto!important;}
-.ai-page:has(.ai-v3-shell) .ai-v3-shell{height:calc(100dvh - 150px);min-height:0!important;max-height:calc(100dvh - 150px);overflow:hidden;}
+.ai-page:has(.ai-v3-shell) .ai-v3-shell{height:calc(100dvh - 92px);min-height:0!important;max-height:calc(100dvh - 92px);overflow:hidden;}
 .ai-page:has(.ai-v3-shell) .ai-v3-chat{height:100%;min-height:0!important;max-height:100%;overflow:hidden;}
-.ai-page:has(.ai-v3-shell) .ai-v3-messages{min-height:0!important;height:auto;overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;}
+.ai-page:has(.ai-v3-shell) .ai-v3-messages{min-height:0!important;height:auto;flex:1 1 auto;overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;}
 .ai-page:has(.ai-v3-shell) .ai-v3-form{flex:0 0 auto;}
 @media (max-width:860px){
-  .ai-page:has(.ai-v3-shell) .ai-v3-shell{height:calc(100dvh - 128px);max-height:calc(100dvh - 128px);}
+  .ai-page:has(.ai-v3-shell) .ai-v3-shell{height:calc(100dvh - 76px);max-height:calc(100dvh - 76px);}
 }
 @media (max-width:560px){
-  .ai-page:has(.ai-v3-shell) .ai-v3-shell{width:calc(100% - 20px);height:calc(100dvh - 112px);max-height:calc(100dvh - 112px);padding-bottom:0;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-shell{width:calc(100% - 20px);height:calc(100dvh - 68px);max-height:calc(100dvh - 68px);padding-bottom:0;}
   .ai-page:has(.ai-v3-shell) .ai-v3-chat{min-height:0!important;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-messages{padding:14px 12px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-messages{padding:12px 10px;min-height:0!important;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head{padding:14px 15px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head h2{font-size:21px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-form{padding:8px 10px 10px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-form textarea{min-height:52px;max-height:110px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-compose{flex-direction:row;align-items:center;gap:7px;margin-top:6px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-compose>div{gap:5px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-attach,.ai-page:has(.ai-v3-shell) .ai-v3-quick button{padding:7px 8px;font-size:9px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-quick{gap:5px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-send{width:auto;min-width:70px;padding:9px 11px;}
 }
