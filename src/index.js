@@ -18,6 +18,7 @@ import './ai-chat-readability';
 import './steam-install-tutorial';
 import './steam-tutorial-folder';
 import './quiz-results-polish';
+import './ai-final-polish';
 
 const rootElement = document.getElementById('root');
 
