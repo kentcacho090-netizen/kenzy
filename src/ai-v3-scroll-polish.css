@@ -1,0 +1,14 @@
+/* Keep the AI conversation inside the chat card. */
+.ai-page:has(.ai-v3-shell){min-height:0!important;height:auto!important;}
+.ai-page:has(.ai-v3-shell) .ai-v3-shell{height:calc(100dvh - 150px);min-height:0!important;max-height:calc(100dvh - 150px);overflow:hidden;}
+.ai-page:has(.ai-v3-shell) .ai-v3-chat{height:100%;min-height:0!important;max-height:100%;overflow:hidden;}
+.ai-page:has(.ai-v3-shell) .ai-v3-messages{min-height:0!important;height:auto;overflow-y:auto!important;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;}
+.ai-page:has(.ai-v3-shell) .ai-v3-form{flex:0 0 auto;}
+@media (max-width:860px){
+  .ai-page:has(.ai-v3-shell) .ai-v3-shell{height:calc(100dvh - 128px);max-height:calc(100dvh - 128px);}
+}
+@media (max-width:560px){
+  .ai-page:has(.ai-v3-shell) .ai-v3-shell{width:calc(100% - 20px);height:calc(100dvh - 112px);max-height:calc(100dvh - 112px);padding-bottom:0;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat{min-height:0!important;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-messages{padding:14px 12px;}
+}
