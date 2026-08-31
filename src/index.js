@@ -10,10 +10,12 @@ import './notes-stable.css';
 import './study-dashboard-polish.css';
 import './ai-workspace-v3.css';
 import './ai-scroll-fix.css';
+import './ai-v3-scroll-polish.css';
 import './steam-install-tutorial.css';
 import './ai-chat-readability';
 import './steam-install-tutorial';
 import './steam-tutorial-folder';
+import './quiz-results-polish';
 
 const rootElement = document.getElementById('root');
 
