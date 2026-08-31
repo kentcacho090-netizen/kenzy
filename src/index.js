@@ -12,6 +12,7 @@ import './ai-workspace-v3.css';
 import './ai-scroll-fix.css';
 import './ai-v3-scroll-polish.css';
 import './ai-v3-message-alignment.css';
+import './ai-thinking-simple.css';
 import './steam-install-tutorial.css';
 import './ai-chat-readability';
 import './steam-install-tutorial';
