@@ -1,0 +1,6 @@
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-message .ai-v3-thinking-orb{display:none!important;}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-message .ai-v3-thinking-text{font-size:0!important;animation:none!important;}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-message .ai-v3-thinking-text::after{content:'Kenzy is thinking';font-size:13px;font-weight:800;display:inline-block;animation:none!important;}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-message .ai-v3-bubble{min-width:0!important;padding:13px 16px!important;}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-message .ai-v3-label{display:none!important;}
+.ai-page:has(.ai-v3-shell) .ai-v3-status-message[data-kind='working']{display:none!important;}
