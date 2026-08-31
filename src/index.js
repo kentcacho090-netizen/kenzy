@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './KenzyApp';
 import './Kenzy.css';
@@ -19,6 +19,7 @@ import './steam-install-tutorial';
 import './steam-tutorial-folder';
 import './quiz-results-polish';
 import './ai-final-polish';
+import './ai-reliability-fix';
 
 const rootElement = document.getElementById('root');
 
