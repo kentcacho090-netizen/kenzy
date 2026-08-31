@@ -1,4 +1,4 @@
-/* AI v3 mobile/desktop layout polish: the page itself must not steal height from the chat. */
+/* Final AI v3 presentation layer. Keep the app viewport fixed and let only the conversation scroll. */
 .ai-page:has(.ai-v3-shell){
   width:100%!important;
   max-width:none!important;
@@ -9,19 +9,22 @@
   overflow:hidden!important;
 }
 .ai-page:has(.ai-v3-shell) .ai-v3-shell{
-  width:min(1120px,calc(100% - 32px));
+  width:min(1160px,calc(100% - 32px));
   height:calc(100dvh - 70px)!important;
   min-height:0!important;
   max-height:none!important;
   box-sizing:border-box;
-  padding:44px 0 12px!important;
+  padding:42px 0 12px!important;
   overflow:hidden!important;
+  grid-template-columns:250px minmax(0,1fr);
+  gap:16px;
 }
 .ai-page:has(.ai-v3-shell) .ai-v3-chat{
   min-height:0!important;
   height:100%!important;
   max-height:none!important;
   overflow:hidden!important;
+  border-radius:22px;
 }
 .ai-page:has(.ai-v3-shell) .ai-v3-messages{
   min-height:0!important;
@@ -33,102 +36,126 @@
   overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
   scrollbar-gutter:stable;
-  padding-bottom:24px;
+  padding:26px 28px 34px!important;
+  gap:22px!important;
 }
-.ai-page:has(.ai-v3-shell) .ai-v3-status-message{flex:0 0 auto;}
-.ai-page:has(.ai-v3-shell) .ai-v3-form{flex:0 0 auto;}
-
-/* Readable conversation layout: wider bubbles, comfortable spacing, preserved AI line breaks. */
 .ai-page:has(.ai-v3-shell) .ai-v3-message{
-  max-width:min(92%,900px);
+  width:100%;
+  max-width:100%!important;
+  gap:12px;
+  align-items:flex-start;
 }
+.ai-page:has(.ai-v3-shell) .ai-v3-message.user{justify-content:flex-end;}
+.ai-page:has(.ai-v3-shell) .ai-v3-message.assistant .ai-v3-bubble{max-width:min(920px,calc(100% - 46px))!important;}
+.ai-page:has(.ai-v3-shell) .ai-v3-message.user .ai-v3-bubble{max-width:min(760px,calc(100% - 46px))!important;}
 .ai-page:has(.ai-v3-shell) .ai-v3-bubble{
-  padding:16px 18px!important;
-  font-size:15px!important;
-  line-height:1.75!important;
+  box-sizing:border-box;
+  padding:17px 19px!important;
+  font-size:16px!important;
+  line-height:1.78!important;
   letter-spacing:0!important;
-  white-space:pre-wrap!important;
+  white-space:normal!important;
   overflow-wrap:anywhere!important;
   word-break:normal!important;
   text-wrap:pretty;
+  border-radius:18px!important;
 }
-.ai-page:has(.ai-v3-shell) .ai-v3-message.assistant .ai-v3-bubble{
-  max-width:100%;
-}
-.ai-page:has(.ai-v3-shell) .ai-v3-message.user .ai-v3-bubble{
-  max-width:min(760px,100%);
-}
+.ai-page:has(.ai-v3-shell) .ai-v3-message.user .ai-v3-bubble{white-space:pre-wrap!important;}
+.ai-page:has(.ai-v3-shell) .ai-v3-content{font-size:inherit;line-height:inherit;}
+.ai-page:has(.ai-v3-shell) .ai-v3-content>br+br{display:block;content:'';margin-top:.7em;}
+.ai-page:has(.ai-v3-shell) .ai-v3-heading{display:block;font-size:1.06em;line-height:1.45;margin:.15em 0 .35em;}
+.ai-page:has(.ai-v3-shell) .ai-v3-list-item{display:block;margin:.28em 0;}
+.ai-page:has(.ai-v3-shell) .ai-v3-inline-code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;padding:.12em .38em;border-radius:6px;background:rgba(127,127,127,.12);}
+.ai-page:has(.ai-v3-shell) .ai-v3-code{margin:12px 0 2px;padding:13px 14px;overflow:auto;border-radius:12px;background:rgba(127,127,127,.1);font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;}
+.ai-page:has(.ai-v3-shell) .ai-v3-label{font-size:10px!important;line-height:1.2!important;margin-bottom:7px!important;letter-spacing:.04em;}
+.ai-page:has(.ai-v3-shell) .ai-v3-avatar{width:36px;height:36px;flex-basis:36px;border-radius:11px;margin-top:2px;}
+
+/* Real in-conversation thinking indicator: animated dots plus rotating status text. */
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-message .ai-v3-bubble{padding:15px 18px!important;min-width:250px;}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking{display:flex;align-items:center;gap:11px;min-height:25px;color:var(--muted,#68728a);}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-orb{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 2px;}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-orb i{display:block;width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.28;animation:aiV3ThinkingDot 1.15s ease-in-out infinite;}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-orb i:nth-child(2){animation-delay:.14s;}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-orb i:nth-child(3){animation-delay:.28s;}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-text{font-size:13px;font-weight:750;animation:aiV3ThinkingText .28s ease;}
+.ai-page:has(.ai-v3-shell) .ai-v3-thinking-text.is-changing{animation:aiV3ThinkingText .28s ease;}
+@keyframes aiV3ThinkingDot{0%,60%,100%{transform:translateY(0) scale(.8);opacity:.25}30%{transform:translateY(-5px) scale(1);opacity:1}}
+@keyframes aiV3ThinkingText{from{opacity:.2;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+/* Status is secondary; don't let it compete with the actual thinking bubble. */
+.ai-page:has(.ai-v3-shell) .ai-v3-status-message{flex:0 0 auto;margin:0 28px 10px;min-height:36px;padding:9px 12px;font-size:11px;}
+.ai-page:has(.ai-v3-shell) .ai-v3-form{flex:0 0 auto;padding:14px 18px 18px;}
+.ai-page:has(.ai-v3-shell) .ai-v3-form textarea{font-size:15px;line-height:1.5;min-height:64px;padding:13px 14px;}
+.ai-page:has(.ai-v3-shell) .ai-v3-compose{margin-top:9px;}
+.ai-page:has(.ai-v3-shell) .ai-v3-send{min-height:42px;}
 
 @media(max-width:860px){
   .ai-page:has(.ai-v3-shell){height:calc(100dvh - 70px)!important;}
   .ai-page:has(.ai-v3-shell) .ai-v3-shell{
     width:100%;
     height:calc(100dvh - 70px)!important;
-    padding:46px 10px 10px!important;
+    grid-template-columns:1fr;
+    padding:44px 10px 10px!important;
     gap:10px;
   }
-  .ai-page:has(.ai-v3-shell) .ai-v3-chat{min-height:0!important;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-message{max-width:94%;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-sidebar{max-height:26vh;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-message.assistant .ai-v3-bubble{max-width:min(900px,calc(100% - 46px))!important;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-messages{padding:22px 20px 30px!important;gap:20px!important;}
 }
 
 @media(max-width:560px){
-  .ai-page:has(.ai-v3-shell){
-    height:calc(100dvh - 70px)!important;
-    overflow:hidden!important;
-  }
+  .ai-page:has(.ai-v3-shell){height:calc(100dvh - 70px)!important;overflow:hidden!important;}
   .ai-page:has(.ai-v3-shell) .ai-v3-shell{
     width:100%;
     height:calc(100dvh - 70px)!important;
     max-height:none!important;
-    padding:42px 6px 6px!important;
+    padding:40px 6px 6px!important;
     gap:6px;
   }
-  .ai-page:has(.ai-v3-shell) .ai-v3-chat{
-    height:100%!important;
-    min-height:0!important;
-    border-radius:20px;
-  }
-  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head{
-    padding:11px 13px;
-    min-height:58px;
-  }
-  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head h2{font-size:20px;margin:3px 0 2px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head p{font-size:10px;line-height:1.3;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat{height:100%!important;min-height:0!important;border-radius:20px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head{padding:12px 14px;min-height:60px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head h2{font-size:21px;margin:3px 0 3px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-chat-head p{font-size:10.5px;line-height:1.4;}
   .ai-page:has(.ai-v3-shell) .ai-v3-provider{padding:6px 8px;font-size:9px;}
   .ai-page:has(.ai-v3-shell) .ai-v3-messages{
     min-height:0!important;
-    padding:14px 10px 34px!important;
-    gap:16px;
+    padding:16px 11px 34px!important;
+    gap:18px!important;
   }
-  .ai-page:has(.ai-v3-shell) .ai-v3-message{max-width:96%;gap:9px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-message{max-width:100%!important;gap:9px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-message.assistant .ai-v3-bubble,
+  .ai-page:has(.ai-v3-shell) .ai-v3-message.user .ai-v3-bubble{max-width:calc(100% - 45px)!important;}
   .ai-page:has(.ai-v3-shell) .ai-v3-bubble{
-    padding:14px 15px!important;
-    font-size:14px!important;
-    line-height:1.75!important;
-    white-space:pre-wrap!important;
-    overflow-wrap:anywhere!important;
-    word-break:normal!important;
+    padding:15px 16px!important;
+    font-size:15px!important;
+    line-height:1.78!important;
+    border-radius:17px!important;
   }
-  .ai-page:has(.ai-v3-shell) .ai-v3-form{padding:7px 8px 8px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-form textarea{
-    min-height:46px;
-    max-height:96px;
-    resize:none;
-    line-height:1.35;
-  }
-  .ai-page:has(.ai-v3-shell) .ai-v3-compose{margin-top:6px;gap:6px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-compose>div{width:100%;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-quick{gap:4px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-label{font-size:9.5px!important;margin-bottom:7px!important;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-avatar{width:34px;height:34px;flex-basis:34px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-thinking-message .ai-v3-bubble{min-width:0;padding:13px 15px!important;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-thinking-text{font-size:12px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-form{padding:8px 8px 9px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-form textarea{font-size:15px;min-height:52px;max-height:130px;line-height:1.45;padding:12px 13px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-compose{margin-top:7px;gap:7px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-quick{gap:5px;}
   .ai-page:has(.ai-v3-shell) .ai-v3-quick button,
-  .ai-page:has(.ai-v3-shell) .ai-v3-attach{padding:6px 7px;font-size:9px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-send{width:100%;min-height:38px;padding:8px 10px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-attach{padding:7px 8px;font-size:9.5px;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-send{width:100%;min-height:40px;padding:8px 10px;}
   .ai-page:has(.ai-v3-shell) .ai-v3-status-message{margin:0 8px 4px;min-height:32px;padding:7px 9px;font-size:10px;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-sidebar{max-height:34vh;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-sidebar{max-height:30vh;}
 }
 
 @media(max-width:380px){
   .ai-page:has(.ai-v3-shell) .ai-v3-chat-head{padding:10px 11px;}
   .ai-page:has(.ai-v3-shell) .ai-v3-provider{display:none;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-quick button:nth-child(3){display:none;}
-  .ai-page:has(.ai-v3-shell) .ai-v3-bubble{font-size:13.5px!important;line-height:1.72!important;padding:13px 14px!important;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-messages{padding-left:8px!important;padding-right:8px!important;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-bubble{font-size:14.5px!important;line-height:1.74!important;padding:14px 14px!important;}
+  .ai-page:has(.ai-v3-shell) .ai-v3-message.assistant .ai-v3-bubble,
+  .ai-page:has(.ai-v3-shell) .ai-v3-message.user .ai-v3-bubble{max-width:calc(100% - 42px)!important;}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .ai-page:has(.ai-v3-shell) .ai-v3-thinking-orb i,
+  .ai-page:has(.ai-v3-shell) .ai-v3-thinking-text{animation:none!important;}
 }
