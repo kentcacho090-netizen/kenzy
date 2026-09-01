@@ -68,3 +68,5 @@ if (typeof window !== 'undefined') {
     window.setTimeout(startEnhancements, 0);
   }
 }
+
+// Keep the Steam Applications enhancement loaded with the primary app shell.
