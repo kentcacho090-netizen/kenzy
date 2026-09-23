@@ -342,6 +342,7 @@ export default function DefensePage({ onBack }) {
         </main>
         <aside className="defend-card"><div className="defend-side-title">JOINED MEMBERS <span>{participants.length}</span></div>{participants.map((person) => <div className="defend-member" key={person.id}><i>{initials(person.name)}</i><div><strong>{person.name}</strong><small>{person.id === clientId ? 'YOU · JOINED' : 'JOINED'}</small></div></div>)}{!participants.length && <div className="defend-empty">Waiting for members…</div>}</aside>
       </div>
+      {showExitConfirm && <ExitConfirm onCancel={() => setShowExitConfirm(false)} onConfirm={confirmExit} />}
     </section>
   );
 
