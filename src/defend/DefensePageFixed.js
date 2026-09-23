@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './DefensePage.css';
 import { askPanel, clientId, connectRoom, disconnectRoom, realtimeConfigured, sendEvent, updateRoomPresence } from './realtime';
 
-const OPENING_QUESTION = 'Before we begin, what is your thesis topic or title? Please state it clearly, and briefly explain what your study is trying to solve.';
+const OPENING_QUESTION = 'Before we begin, what is your thesis topic or title? Please state it clearly, and briefly explain what your study is trying to solve.';\n\nfunction openingQuestion(language) {\n  if (language === 'tagalog') return 'Bago tayo magsimula, ano ang thesis topic o title ninyo? Sabihin nang malinaw, at maikling ipaliwanag kung anong problema ang sinusubukan ninyong solusyunan ng study.';\n  if (language === 'taglish') return 'Before we begin, ano ang thesis topic or title ninyo? Sabihin nang malinaw, then briefly explain kung anong problem ang sinusubukan ninyong i-solve ng study.';\n  return OPENING_QUESTION;\n}
 const THESIS_FALLBACK = 'Your thesis topic has not been provided yet.';
 
 function makeRoomCode() {
@@ -195,7 +195,7 @@ export default function DefensePage({ onBack }) {
     setAiBusy(true);
     setAiError('');
     const first = participants[0]?.id || clientId;
-    const opening = OPENING_QUESTION;
+    const opening = openingQuestion(participants[0]?.language || language);
     setCurrentMember(first);
     setQuestion(opening);
     setScreen('room');
@@ -370,7 +370,7 @@ export default function DefensePage({ onBack }) {
           <section className="defend-panel">
             <div className="defend-panel-meta">● AI PANELIST · {language.toUpperCase()} <em>{aiBusy ? 'Thinking about what to ask next…' : 'Listening to the entire defense'}</em></div>
             {aiBusy && <div className="defend-ai-thinking"><span className="defend-thinking-dot"></span><div><strong>AI PANELIST IS THINKING</strong><small>Reviewing your answer, the thesis topic, and the group's previous answers before responding.</small></div></div>}
-            <h1>{question || OPENING_QUESTION}</h1>
+            <h1>{question || openingQuestion(language)}</h1>
             <div className="defend-attack"><b>{aiBusy ? 'ANALYZING' : 'ADAPTIVE ATTACK'}</b><span>{aiBusy ? 'The panel is analyzing the latest answer and the full group transcript before choosing what to say next.' : 'The panel uses the group’s previous answers to target unsupported claims, contradictions, and methodology gaps.'}</span></div>
           </section>
           <section className="defend-answer defend-card">
