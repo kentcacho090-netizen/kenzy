@@ -244,6 +244,7 @@ export default function DefensePage({ onBack }) {
       const result = await askPanel({
         topic,
         latestAnswer: '',
+        currentQuestion: question,
         currentMember: { id: clientId, name, language, style },
         members: people.map((p) => ({
           id: p.id,
@@ -297,6 +298,7 @@ export default function DefensePage({ onBack }) {
     const result = await askPanel({
       topic,
       latestAnswer: text,
+      currentQuestion: question,
       currentMember: { id: clientId, name, language, style },
       members: people.map((p) => ({
         id: p.id,
