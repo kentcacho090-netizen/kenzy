@@ -17,3 +17,23 @@
 .defend-chat-compose button{border:1px solid #41484f;background:#e5e7e9;color:#0c0e10;border-radius:8px;padding:0 14px;font-weight:700;cursor:pointer}
 .defend-chat-compose button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:900px){.defend-chat-grid{grid-template-columns:1fr}}
+
+.defend-ai-thinking{display:flex;align-items:center;gap:12px;margin:16px 0;padding:13px 14px;border:1px solid #3b4430;background:#12170f;border-radius:10px}
+.defend-thinking-dot{width:9px;height:9px;border-radius:50%;background:#7ca33b;box-shadow:0 0 0 5px rgba(124,163,59,.12);animation:defendPulse 1.2s infinite}
+.defend-ai-thinking strong{display:block;color:#c8d7b0;font-size:10px;letter-spacing:.08em}
+.defend-ai-thinking small{display:block;color:#89928a;font-size:10px;margin-top:4px;line-height:1.4}
+@keyframes defendPulse{0%,100%{opacity:.45;transform:scale(.9)}50%{opacity:1;transform:scale(1.1)}}
+.defend-side-chat{display:flex;flex-direction:column;margin-top:16px;border:1px solid #292f34;border-radius:10px;overflow:hidden;background:#0d1012;min-height:300px}
+.defend-side-chat-head{display:flex;justify-content:space-between;align-items:center;padding:10px 11px;border-bottom:1px solid #292f34}
+.defend-side-chat-head strong{font-size:10px;letter-spacing:.08em;color:#e1e4e6}
+.defend-side-chat-head span{font:8px 'DM Mono';color:#8c949b;letter-spacing:.08em}
+.defend-side-chat-messages{flex:1;overflow:auto;padding:9px;max-height:280px}
+.defend-side-chat-messages>small{display:block;color:#6f777e;font-size:9px;line-height:1.4;padding:8px}
+.defend-side-chat-msg{padding:7px 8px;margin-bottom:7px;border:1px solid #252b30;border-radius:7px;background:#121518}
+.defend-side-chat-msg b{font-size:8px;color:#9ca4ab;letter-spacing:.04em}
+.defend-side-chat-msg p{margin:3px 0 0;color:#d5d9dc;font-size:10px;line-height:1.35;word-break:break-word}
+.defend-side-chat-compose{display:flex;gap:5px;padding:7px;border-top:1px solid #292f34}
+.defend-side-chat-compose input{min-width:0;flex:1;background:#080a0c;border:1px solid #30363b;border-radius:6px;color:#e5e7e9;padding:8px;font-size:10px;outline:none}
+.defend-side-chat-compose button{width:30px;border:0;border-radius:6px;background:#dfe3e6;color:#111;padding:0;font-weight:800;cursor:pointer}
+.defend-side-chat-compose button:disabled{opacity:.4}
+@media(max-width:900px){.defend-side-chat{min-height:220px}}
