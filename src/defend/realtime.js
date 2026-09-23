@@ -24,8 +24,9 @@ const supabase = realtimeConfigured ? createClient(url, key, {
 }) : null;
 
 let channel = null;
+let presenceState = {};
 
-export async function connectRoom(roomCode, { name, role, onPresence, onEvent, onStatus }) {
+export async function connectRoom(roomCode, { name, role, language, style, onPresence, onEvent, onStatus }) {
   if (!supabase) {
     onStatus?.('LOCAL_MODE');
     return { ok: false, reason: 'missing_env' };
@@ -41,14 +42,17 @@ export async function connectRoom(roomCode, { name, role, onPresence, onEvent, o
     config: { broadcast: { ack: true }, presence: { key: clientId } },
   });
 
+  const emitPresence = () => {
+    const raw = channel?.presenceState?.() || {};
+    const people = Object.entries(raw).flatMap(([id, metas]) =>
+      metas.map((meta) => ({ ...meta, id }))
+    );
+    presenceState = Object.fromEntries(people.map((person) => [person.id, person]));
+    onPresence?.(people);
+  };
+
   channel
-    .on('presence', { event: 'sync' }, () => {
-      const raw = channel?.presenceState?.() || {};
-      const people = Object.entries(raw).flatMap(([id, metas]) =>
-        metas.map((meta) => ({ ...meta, id }))
-      );
-      onPresence?.(people);
-    })
+    .on('presence', { event: 'sync' }, emitPresence)
     .on('broadcast', { event: 'defend_event' }, (payload) => {
       onEvent?.(payload?.payload);
     });
@@ -74,6 +78,8 @@ export async function connectRoom(roomCode, { name, role, onPresence, onEvent, o
           id: clientId,
           name: String(name || 'Member').trim(),
           role: role || 'member',
+          language: String(language || 'taglish'),
+          style: String(style || 'aggressive'),
           joinedAt: new Date().toISOString(),
         });
         if (result !== 'ok') {
@@ -81,6 +87,7 @@ export async function connectRoom(roomCode, { name, role, onPresence, onEvent, o
           finish({ ok: false, reason: 'presence_track_failed' });
           return;
         }
+        emitPresence();
         onStatus?.('SYNCED');
         finish({ ok: true });
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -91,20 +98,48 @@ export async function connectRoom(roomCode, { name, role, onPresence, onEvent, o
   });
 }
 
+export async function updateRoomPresence({ name, role, language, style }) {
+  if (!channel) return false;
+  try {
+    const result = await channel.track({
+      id: clientId,
+      name: String(name || 'Member').trim(),
+      role: role || 'member',
+      language: String(language || 'taglish'),
+      style: String(style || 'aggressive'),
+      joinedAt: presenceState[clientId]?.joinedAt || new Date().toISOString(),
+    });
+    return result === 'ok';
+  } catch {
+    return false;
+  }
+}
+
 export async function askPanel(payload = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
   try {
     const response = await fetch('/api/defend-panel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      return { ok: false, error: data?.error || 'Gemini AI request failed.' };
+      return {
+        ok: false,
+        error: 'The AI panel could not respond. Please try again.',
+      };
     }
     return { ok: true, ...data };
-  } catch (error) {
-    return { ok: false, error: error?.message || 'Could not reach the Gemini AI panel.' };
+  } catch {
+    return {
+      ok: false,
+      error: 'The AI panel is taking too long. Please try submitting again.',
+    };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -125,5 +160,6 @@ export async function disconnectRoom() {
   if (channel && supabase) {
     await supabase.removeChannel(channel);
     channel = null;
+    presenceState = {};
   }
 }
