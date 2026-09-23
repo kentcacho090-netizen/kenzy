@@ -73,6 +73,32 @@ function fallbackQuestion({ topic, language, phase, latestAnswer, currentQuestio
   const answer = String(latestAnswer || '').trim();
   const lower = answer.toLowerCase();
 
+  // When the provider is unavailable, continue the attack instead of repeating the
+  // exact previous question. The fallback follows the same claim -> counter-scenario
+  // -> deeper consequence pattern as the live panel.
+  if (phase === 'defense' && /predict|prediction|predictive|early warning/i.test(currentQuestion)) {
+    if (/before|prior|advance|lead time|minutes?|hours?|days?|window/i.test(lower)) {
+      if (language === 'english') return 'Okay, so you are claiming there is a lead time before the event. Let’s say the warning appears 30 seconds before a trip but disappears when the load changes. What experiment would show that the warning is actually tied to deterioration and not just a temporary operating condition?';
+      if (language === 'tagalog') return 'Okay, sinasabi ninyo na may lead time bago ang event. Pero paano kung lumabas ang warning 30 seconds bago mag-trip at nawawala kapag nagbago ang load? Anong experiment ang magpapakitang deterioration talaga ang dahilan at hindi temporary operating condition?';
+      return 'Okay, sinasabi ninyo na may lead time bago ang event. Pero paano kung lumabas ang warning 30 seconds before mag-trip at nawawala kapag nagbago ang load? Anong experiment ang magpapakitang deterioration talaga ang dahilan at hindi temporary operating condition?';
+    }
+    if (language === 'english') return 'Wait. You answered that the system predicts the event before it happens. How are you defining the prediction window—seconds, minutes, or hours—and what measured signal must change during that window before the actual event?';
+    if (language === 'tagalog') return 'Wait lang. Sabi ninyo prediction talaga dahil nauuna ang warning. Paano ninyo dini-define ang prediction window—seconds, minutes, o hours—and anong measured signal ang dapat magbago sa window na iyon bago mangyari ang actual event?';
+    return 'Wait lang. Sabi ninyo prediction talaga dahil nauuna ang warning. Paano ninyo dini-define ang prediction window—seconds, minutes, or hours—and anong measured signal ang dapat magbago sa window na iyon bago mangyari ang actual event?';
+  }
+
+  if (phase === 'defense' && /temperature|thermal|heat/i.test(currentQuestion) && /load|current|appliance|ambient/i.test(lower)) {
+    if (language === 'english') return 'Good, you separated temperature rise from load change. Now suppose the ambient temperature also changes throughout the day. What reference or normalization keeps that environmental change from looking like breaker deterioration?';
+    if (language === 'tagalog') return 'Okay, na-separate ninyo ang temperature rise sa load change. Pero paano kung nagbabago rin ang ambient temperature buong araw? Anong reference o normalization ang pipigil na magmukhang breaker deterioration ang environmental change?';
+    return 'Okay, na-separate ninyo ang temperature rise sa load change. Pero paano kung nagbabago rin ang ambient temperature buong araw? Anong reference or normalization ang pipigil na magmukhang breaker deterioration ang environmental change?';
+  }
+
+  if (phase === 'defense' && /waveform|rms|sampling|frequency/i.test(currentQuestion) && /load|appliance|noise|sensor/i.test(lower)) {
+    if (language === 'english') return 'You accounted for load variation. Now imagine the waveform change is only a short transient caused by another appliance. What time window or feature in your method prevents that transient from becoming a false breaker warning?';
+    if (language === 'tagalog') return 'Na-account ninyo ang load variation. Pero paano kung short transient lang ang waveform change dahil sa ibang appliance? Anong time window o feature ang pipigil na maging false breaker warning iyon?';
+    return 'Na-account ninyo ang load variation. Pero paano kung short transient lang ang waveform change dahil sa ibang appliance? Anong time window or feature ang pipigil na maging false breaker warning iyon?';
+  }
+
   if (phase === 'topic_intake') {
     if (language === 'tagalog') {
       return 'Sige. Ngayon, ano mismo ang problemang sinosolusyonan ng study ninyo, at paano ninyo mapapatunayang kailangan ang proposed system ninyo?';
