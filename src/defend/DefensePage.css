@@ -51,3 +51,24 @@
 .defend-exit-confirm{border:1px solid #7a2d3a;background:#3a171d;color:#ffb1b9;border-radius:11px;padding:12px 14px;font:800 13px inherit;cursor:pointer;transition:.16s}
 .defend-exit-confirm:hover{background:#4a1b23;border-color:#a43b4b}
 @media(max-width:560px){.defend-exit-dialog{padding:22px}.defend-exit-actions{flex-direction:column}}
+
+
+.defend-panel-clarification {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(141, 202, 67, 0.35);
+  border-radius: 12px;
+  background: rgba(141, 202, 67, 0.06);
+}
+.defend-panel-clarification small {
+  display: block;
+  margin-bottom: 7px;
+  letter-spacing: .08em;
+  font-size: 10px;
+  color: #9bd35c;
+}
+.defend-panel-clarification p {
+  margin: 0;
+  color: #e8e8e8;
+  line-height: 1.55;
+}
