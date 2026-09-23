@@ -92,37 +92,19 @@ export async function connectRoom(roomCode, { name, role, onPresence, onEvent, o
 }
 
 export async function askPanel(payload = {}) {
-  if (!supabase) return { ok: false, error: 'Supabase is not configured.' };
   try {
-    const { data, error } = await supabase.functions.invoke('defend-panel', { body: payload });
-    if (error) {
-      let detail = error.message || 'AI panel request failed.';
-      try {
-        const response = error.context;
-        if (response && typeof response.clone === 'function') {
-          const body = await response.clone().text();
-          if (body) {
-            const parsed = JSON.parse(body);
-            detail = parsed?.error || parsed?.message || detail;
-          }
-        }
-      } catch {}
-      return { ok: false, error: detail };
+    const response = await fetch('/api/defend-panel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { ok: false, error: data?.error || 'Gemini AI request failed.' };
     }
     return { ok: true, ...data };
   } catch (error) {
-    let detail = error?.message || 'AI panel request failed.';
-    try {
-      const ctx = error?.context;
-      if (ctx) {
-        const body = typeof ctx.text === 'function' ? await ctx.text() : '';
-        if (body) {
-          const parsed = JSON.parse(body);
-          detail = parsed?.error || parsed?.message || detail;
-        }
-      }
-    } catch {}
-    return { ok: false, error: detail };
+    return { ok: false, error: error?.message || 'Could not reach the Gemini AI panel.' };
   }
 }
 
