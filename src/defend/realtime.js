@@ -95,7 +95,20 @@ export async function askPanel(payload = {}) {
   if (!supabase) return { ok: false, error: 'Supabase is not configured.' };
   try {
     const { data, error } = await supabase.functions.invoke('defend-panel', { body: payload });
-    if (error) return { ok: false, error: error.message || 'AI panel request failed.' };
+    if (error) {
+      let detail = error.message || 'AI panel request failed.';
+      try {
+        const response = error.context;
+        if (response && typeof response.clone === 'function') {
+          const body = await response.clone().text();
+          if (body) {
+            const parsed = JSON.parse(body);
+            detail = parsed?.error || parsed?.message || detail;
+          }
+        }
+      } catch {}
+      return { ok: false, error: detail };
+    }
     return { ok: true, ...data };
   } catch (error) {
     let detail = error?.message || 'AI panel request failed.';
