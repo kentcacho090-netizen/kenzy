@@ -50,6 +50,10 @@ function makeRoomCode() {
   return 'DFND-' + Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
+function normalizeRoomCode(value) {
+  return String(value || '').trim().toUpperCase().replace(/\s+/g, '-').replace(/[^A-Z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 16);
+}
+
 function initials(name) {
   return String(name || '??').slice(0, 2).toUpperCase();
 }
@@ -147,9 +151,9 @@ export default function DefensePage({ onBack }) {
   }
 
   async function enterRoom() {
-    const cleanRoom = room.trim().toUpperCase().replace(/\s+/g, '');
+    const cleanRoom = normalizeRoomCode(room);
     const cleanName = name.trim();
-    if (!/^DFND-[A-Z0-9]{4}$/.test(cleanRoom)) return setError('Use a room code like DFND-7K4P.');
+    if (!/^[A-Z0-9][A-Z0-9-]{3,15}$/.test(cleanRoom)) return setError('Use 4–16 letters/numbers, with optional hyphens. Example: KEN-DEFEND.');
     if (cleanName.length < 2) return setError('Enter your name first.');
     setRoom(cleanRoom);
     setName(cleanName.slice(0, 24));
@@ -217,8 +221,8 @@ export default function DefensePage({ onBack }) {
       <div className="defend-form-card">
         <div className="defend-eyebrow">{isCreator ? 'ROOM CREATED' : 'JOIN DEFENSE ROOM'}</div>
         <h2>{isCreator ? 'Your room is ready.' : 'Enter the room.'}</h2>
-        <p>{isCreator ? 'Share the code with your group. Everyone joins before the AI begins.' : 'Use the room code your group shared with you.'}</p>
-        <label>ROOM CODE<input value={room} onChange={(e) => setRoom(e.target.value.toUpperCase())} placeholder="DFND-7K4P" maxLength={9} /></label>
+        <p>{isCreator ? 'Share this code with your group. You can edit it to something easy to remember before joining.' : 'Use the room code your group shared with you.'}</p>
+        <label>ROOM CODE<input value={room} onChange={(e) => setRoom(normalizeRoomCode(e.target.value))} placeholder="KEN-DEFEND" maxLength={16} /><small>{isCreator ? 'Custom codes make it easier for your group to join. Keep it 4–16 characters.' : 'Ask your room creator for the exact code.'}</small></label>
         <label>YOUR NAME<input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ken" maxLength={24} /></label>
         <div className="defend-two"><label>LANGUAGE<select value={language} onChange={(e) => setLanguage(e.target.value)}><option value="taglish">🇵🇭 Taglish</option><option value="tagalog">🇵🇭 Tagalog</option><option value="english">🇺🇸 English</option></select></label><label>STYLE<select value={style} onChange={(e) => setStyle(e.target.value)}><option value="aggressive">🔥 Aggressive</option><option value="balanced">⚖️ Balanced</option><option value="technical">🧠 Technical</option><option value="formal">🎓 Formal</option></select></label></div>
         {error && <div className="defend-error">{error}</div>}
@@ -237,6 +241,7 @@ export default function DefensePage({ onBack }) {
           <h2>Waiting for the defense to start.</h2>
           <p>Everyone joins first. Then the AI panelist takes control.</p>
           <div className="defend-thesis"><small>SHARED THESIS</small><strong>{THESIS}</strong></div>
+          <div className="defend-room-code"><div><small>ROOM CODE · SHARE THIS</small><strong>{room}</strong></div><button onClick={() => navigator.clipboard?.writeText(room)}>Copy code</button></div>
           <div className="defend-ready">● <div><strong>AI PANELIST READY</strong><span>No human host. The AI chooses targets, follow-ups, and when the defense ends.</span></div></div>
           {status === 'LOCAL_MODE' && <div className="defend-warning">Realtime is not configured yet. Add the Supabase variables to the StudyKen Vercel project to synchronize devices.</div>}
           {status === 'ERROR' || status === 'TIMEOUT' ? <div className="defend-warning">Realtime could not connect. Check the Supabase variables and redeploy.</div> : null}
