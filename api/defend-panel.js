@@ -360,6 +360,10 @@ module.exports = async function handler(req, res) {
       outputLanguage: 'adaptive-per-member',
       style: String(style || 'aggressive'),
       panelChat: Array.isArray(panelChat) ? panelChat.slice(-8) : [],
+      recentQuestions: (Array.isArray(transcript) ? transcript : [])
+        .map((item) => String(item?.question || '').trim())
+        .filter(Boolean)
+        .slice(-8),
       userMessage: String(userMessage).slice(0, 3000),
     };
 
@@ -375,7 +379,7 @@ module.exports = async function handler(req, res) {
         topic: { type: 'STRING' },
         finish: { type: 'BOOLEAN' },
       },
-      required: ['question', 'nextMember', 'topic', 'finish'],
+      required: ['attackTarget', 'attackVulnerability', 'responseAssessment', 'escalation', 'question', 'nextMember', 'topic', 'finish'],
     };
     const clarificationSchema = {
       type: 'OBJECT',
@@ -409,7 +413,8 @@ module.exports = async function handler(req, res) {
       const basePrompt = [
         'You are the live thesis-defense panelist. Think through the answer before writing the question.',
         'The latest student answer is the PRIMARY evidence. Do not generate from the thesis title alone.',
-        'First internally identify: (1) what the student actually said, (2) what is weak or newly exposed, (3) one concrete counter-scenario or technical objection, and (4) the next pressure point.',
+        'First internally identify what the student actually said.',
+        'Then privately fill four short planning fields: attackTarget (exact claim/detail), attackVulnerability (concrete weakness), responseAssessment (weak/partial/strong/contradictory/unclear), and escalation (what deeper pressure follows). These are internal control data; they are not shown to the student.',
         'Then write ONE question that attacks that exact point.',
         'The question must logically follow the CURRENT PANEL QUESTION and the latest answer.',
         'If the student answered the previous attack, do not restart. Attack the new defense they just gave.',
@@ -459,6 +464,18 @@ module.exports = async function handler(req, res) {
             : (currentMember?.id || normalizedMembers?.[0]?.id || '');
 
           let nextQuestion = String(result.question || '').trim();
+          const hasAttackReasoning = Boolean(
+            String(result.attackTarget || '').trim() &&
+            String(result.attackVulnerability || '').trim() &&
+            String(result.responseAssessment || '').trim() &&
+            String(result.escalation || '').trim()
+          );
+
+          // One repair pass only when the model repeats/copies the previous material
+          // or fails to produce an actual attack plan.
+          if (!hasAttackReasoning) {
+            nextQuestion = '';
+          }
 
           // One repair pass only when the model repeats/copies the previous material.
           // This keeps normal responses fast while preventing obvious low-quality loops.
