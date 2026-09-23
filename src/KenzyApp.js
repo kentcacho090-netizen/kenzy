@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './Kenzy.css';
-import DefensePage from './defend/DefensePage';
+import DefensePage from './defend/DefensePageFixed';
 
 const QUIZ_STORAGE = 'kenzy-quizzes-v4';
 const NOTES_STORAGE = 'kenzy-notes-v1';
