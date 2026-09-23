@@ -38,6 +38,11 @@ export default function DefensePage({ onBack }) {
   const [answer, setAnswer] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [panelChat, setPanelChat] = useState([]);
+  const [teamChat, setTeamChat] = useState([]);
+  const [panelMessage, setPanelMessage] = useState('');
+  const [teamMessage, setTeamMessage] = useState('');
+  const [panelBusy, setPanelBusy] = useState(false);
   const [error, setError] = useState('');
 
   const memberMap = useMemo(() => Object.fromEntries(participants.map((p) => [p.id, p])), [participants]);
@@ -78,6 +83,7 @@ export default function DefensePage({ onBack }) {
         topic,
         language,
         style,
+        panelChat,
         started: Boolean(question),
       });
     } else if (event.event === 'snapshot' && !isCreator) {
@@ -87,6 +93,7 @@ export default function DefensePage({ onBack }) {
       setTopic(event.topic || '');
       setLanguage(event.language || 'taglish');
       setStyle(event.style || 'aggressive');
+      setPanelChat(event.panelChat || []);
       if (event.started) setScreen('room');
       else setScreen('lobby');
     } else if (event.event === 'start') {
@@ -103,6 +110,10 @@ export default function DefensePage({ onBack }) {
       setTopic(event.topic || topic);
       setAiBusy(false);
       setAiError('');
+    } else if (event.event === 'panel_chat') {
+      setPanelChat((items) => items.some((item) => item.id === event.message?.id) ? items : [...items, event.message]);
+    } else if (event.event === 'team_chat') {
+      setTeamChat((items) => items.some((item) => item.id === event.message?.id) ? items : [...items, event.message]);
     } else if (event.event === 'settings') {
       setLanguage(event.language || language);
       setStyle(event.style || style);
@@ -163,6 +174,47 @@ export default function DefensePage({ onBack }) {
       style,
     });
     setAiBusy(false);
+  }
+
+  async function sendPanelMessage() {
+    const text = panelMessage.trim();
+    if (!text || panelBusy) return;
+    const message = { id: crypto.randomUUID(), member: clientId, name, text, createdAt: new Date().toISOString() };
+    const next = [...panelChat, message];
+    setPanelChat(next);
+    setPanelMessage('');
+    setPanelBusy(true);
+    const result = await askPanel({
+      topic,
+      latestAnswer: '',
+      currentMember: { id: clientId, name },
+      members: participants.map((p) => ({ id: p.id, name: p.name })),
+      transcript,
+      panelChat: next,
+      userMessage: text,
+      language,
+      style,
+      phase: 'panel_chat',
+    });
+    if (result.ok && result.reply) {
+      const reply = { id: crypto.randomUUID(), member: 'ai-panel', name: 'AI PANEL', text: result.reply, createdAt: new Date().toISOString(), ai: true };
+      setPanelChat((items) => [...items, reply]);
+      await sendEvent('panel_chat', { message: reply });
+    } else if (!result.ok) {
+      setAiError(result.error || 'The AI panel could not respond.');
+    }
+    await sendEvent('panel_chat', { message });
+    setPanelBusy(false);
+  }
+
+  async function sendTeamMessage() {
+    const text = teamMessage.trim();
+    if (!text) return;
+    const message = { id: crypto.randomUUID(), member: clientId, name, text, createdAt: new Date().toISOString() };
+    setTeamChat((items) => [...items, message]);
+    setTeamMessage('');
+    // IMPORTANT: team_chat is never sent to askPanel, so the AI cannot see this private team discussion.
+    await sendEvent('team_chat', { message });
   }
 
   async function submitAnswer() {
@@ -315,6 +367,24 @@ export default function DefensePage({ onBack }) {
             <textarea disabled={currentMember !== clientId || aiBusy} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={currentMember === clientId ? 'Your answer is shared with everyone in the room…' : 'Wait for your turn…'} />
             <button className="defend-primary wide" disabled={currentMember !== clientId || !answer.trim() || aiBusy} onClick={submitAnswer}>{aiBusy ? 'AI is analyzing…' : 'Submit to AI panel →'}</button>
             {aiError && <div className="defend-error">{aiError}</div>}
+          </section>
+          <section className="defend-chat-grid">
+            <div className="defend-chat defend-card">
+              <div className="defend-chat-head"><div><strong>AI PANEL CHAT</strong><small>Visible to the AI · use this to address the panel</small></div><span>AI SEES THIS</span></div>
+              <div className="defend-chat-messages">
+                {panelChat.map((item) => <div className={item.ai ? 'defend-chat-msg ai' : 'defend-chat-msg'} key={item.id}><b>{item.ai ? 'AI PANEL' : item.name}</b><p>{item.text}</p></div>)}
+                {!panelChat.length && <div className="defend-empty">Ask the panel something. The AI can see this chat together with the defense transcript.</div>}
+              </div>
+              <div className="defend-chat-compose"><input value={panelMessage} onChange={(e) => setPanelMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendPanelMessage()} placeholder="Talk to the AI panel…" disabled={panelBusy}/><button onClick={sendPanelMessage} disabled={!panelMessage.trim() || panelBusy}>Send</button></div>
+            </div>
+            <div className="defend-chat defend-card">
+              <div className="defend-chat-head"><div><strong>TEAM CHAT</strong><small>For your group only · AI cannot see this</small></div><span>AI BLIND</span></div>
+              <div className="defend-chat-messages">
+                {teamChat.map((item) => <div className="defend-chat-msg team" key={item.id}><b>{item.name}</b><p>{item.text}</p></div>)}
+                {!teamChat.length && <div className="defend-empty">Chitchat here. Discuss how to answer without feeding the AI your strategy.</div>}
+              </div>
+              <div className="defend-chat-compose"><input value={teamMessage} onChange={(e) => setTeamMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendTeamMessage()} placeholder="Talk to your group…"/><button onClick={sendTeamMessage} disabled={!teamMessage.trim()}>Send</button></div>
+            </div>
           </section>
           <section className="defend-feed defend-card">
             <div className="defend-feed-head">LIVE DEFENSE FEED <span>Shared with the entire group</span></div>
