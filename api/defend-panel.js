@@ -77,198 +77,100 @@ function cleanLanguage(value) {
 }
 
 function fallbackQuestion({ topic, language, phase, latestAnswer, currentQuestion, currentMember }) {
-  const answer = String(latestAnswer || '').trim();
-  const lower = answer.toLowerCase();
-
-  // When the provider is unavailable, continue the attack instead of repeating the
-  // exact previous question. The fallback follows the same claim -> counter-scenario
-  // -> deeper consequence pattern as the live panel.
-  if (phase === 'defense' && /predict|prediction|predictive|early warning/i.test(currentQuestion)) {
-    if (/before|prior|advance|lead time|minutes?|hours?|days?|window/i.test(lower)) {
-      if (language === 'english') return 'Okay, so you are claiming there is a lead time before the event. Let’s say the warning appears 30 seconds before a trip but disappears when the load changes. What experiment would show that the warning is actually tied to deterioration and not just a temporary operating condition?';
-      if (language === 'tagalog') return 'Okay, sinasabi ninyo na may lead time bago ang event. Pero paano kung lumabas ang warning 30 seconds bago mag-trip at nawawala kapag nagbago ang load? Anong experiment ang magpapakitang deterioration talaga ang dahilan at hindi temporary operating condition?';
-      return 'Okay, sinasabi ninyo na may lead time bago ang event. Pero paano kung lumabas ang warning 30 seconds before mag-trip at nawawala kapag nagbago ang load? Anong experiment ang magpapakitang deterioration talaga ang dahilan at hindi temporary operating condition?';
-    }
-    if (language === 'english') return 'Wait. You answered that the system predicts the event before it happens. How are you defining the prediction window—seconds, minutes, or hours—and what measured signal must change during that window before the actual event?';
-    if (language === 'tagalog') return 'Wait lang. Sabi ninyo prediction talaga dahil nauuna ang warning. Paano ninyo dini-define ang prediction window—seconds, minutes, o hours—and anong measured signal ang dapat magbago sa window na iyon bago mangyari ang actual event?';
-    return 'Wait lang. Sabi ninyo prediction talaga dahil nauuna ang warning. Paano ninyo dini-define ang prediction window—seconds, minutes, or hours—and anong measured signal ang dapat magbago sa window na iyon bago mangyari ang actual event?';
-  }
-
-  if (phase === 'defense' && /temperature|thermal|heat/i.test(currentQuestion) && /load|current|appliance|ambient/i.test(lower)) {
-    if (language === 'english') return 'Good, you separated temperature rise from load change. Now suppose the ambient temperature also changes throughout the day. What reference or normalization keeps that environmental change from looking like breaker deterioration?';
-    if (language === 'tagalog') return 'Okay, na-separate ninyo ang temperature rise sa load change. Pero paano kung nagbabago rin ang ambient temperature buong araw? Anong reference o normalization ang pipigil na magmukhang breaker deterioration ang environmental change?';
-    return 'Okay, na-separate ninyo ang temperature rise sa load change. Pero paano kung nagbabago rin ang ambient temperature buong araw? Anong reference or normalization ang pipigil na magmukhang breaker deterioration ang environmental change?';
-  }
-
-  if (phase === 'defense' && /waveform|rms|sampling|frequency/i.test(currentQuestion) && /load|appliance|noise|sensor/i.test(lower)) {
-    if (language === 'english') return 'You accounted for load variation. Now imagine the waveform change is only a short transient caused by another appliance. What time window or feature in your method prevents that transient from becoming a false breaker warning?';
-    if (language === 'tagalog') return 'Na-account ninyo ang load variation. Pero paano kung short transient lang ang waveform change dahil sa ibang appliance? Anong time window o feature ang pipigil na maging false breaker warning iyon?';
-    return 'Na-account ninyo ang load variation. Pero paano kung short transient lang ang waveform change dahil sa ibang appliance? Anong time window or feature ang pipigil na maging false breaker warning iyon?';
-  }
+  const answer = String(latestAnswer || '').replace(/\s+/g, ' ').trim();
+  const previous = String(currentQuestion || '').replace(/\s+/g, ' ').trim();
 
   if (phase === 'topic_intake') {
     if (language === 'tagalog') {
-      return 'Sige. Ngayon, ano mismo ang problemang sinosolusyonan ng study ninyo, at paano ninyo mapapatunayang kailangan ang proposed system ninyo?';
+      return 'Sige. Ngayon, ano mismo ang problemang sinosolusyonan ng study ninyo, at ano ang pangunahing paraan na gagamitin ninyo para ma-address iyon?';
     }
     if (language === 'english') {
-      return 'Good. Now, what exact problem does your study solve, and how will you prove that your proposed system actually addresses it?';
+      return 'Good. Now, what exact problem does your study address, and what is the main approach you will use to address it?';
     }
-    return 'Okay. Pero ano mismo ang problem na sinosolusyonan ng study ninyo, at paano ninyo mapapatunayang talagang naa-address iyon ng proposed system?';
+    return 'Okay. Ngayon, ano mismo ang problem na ina-address ng study ninyo, at ano ang main approach na gagamitin ninyo para ma-address iyon?';
   }
 
-  // The fallback is still supposed to sound like a real panelist. Never fall back
-  // to a vague "what is your assumption?" question. Attack the student's actual
-  // claim and demand the concrete measurement, test, comparison, or evidence that
-  // would establish it.
   if (!answer) {
-    if (language === 'tagalog') return 'Ano ang pinaka-direct na ebidensiya na sumusuporta sa claim na iyan?';
-    if (language === 'english') return 'What is the most direct evidence that supports that claim?';
-    return 'Okay, pero ano ang pinaka-direct na evidence na sumusuporta sa claim na iyan?';
+    if (language === 'tagalog') return 'Wait lang. Hindi ko pa nakuha ang sagot ninyo. Paki-clarify muna yung specific point na tinatanong ko.';
+    if (language === 'english') return 'Wait. I did not get a usable answer to that point. Clarify the specific part I asked about.';
+    return 'Wait lang. Hindi ko pa nakuha nang malinaw yung sagot ninyo. I-clarify muna yung specific point na tinatanong ko.';
   }
 
-  // Real panel follow-up: use the current answer AND the question that produced it.
-  // This keeps the attack conversational instead of turning every answer into an
-  // abstract "assumption/evidence/validity" exercise.
-  if (/problem|solve|sinosolusyonan|issue|purpose|objective/i.test(currentQuestion) && /deteriorat|abnormal|breaker|overheat|trip|failure|fault/i.test(lower)) {
+  // The fallback is intentionally thesis-agnostic. It uses the student's actual
+  // words and the previous panel question rather than any built-in sample thesis.
+  const claim = answer.slice(0, 240);
+  const lower = answer.toLowerCase();
+
+  if (/because|dahil|kasi|since|therefore|so that|para|which means|ibig sabihin|meaning/i.test(lower)) {
     if (language === 'english') {
-      return 'Okay, but you just described the problem as deterioration or an abnormal breaker condition. How will you know that what you are seeing is actually a breaker problem and not simply a heavier load causing the same waveform or temperature change?';
+      return 'Okay, I understand the reasoning you gave. But what if the same result happens for a different reason? What specific observation would let you distinguish your explanation from that alternative?';
     }
     if (language === 'tagalog') {
-      return 'Okay, pero sinabi ninyo na deterioration o abnormal breaker condition ang gusto ninyong makita. Paano ninyo malalaman na breaker problem talaga iyon at hindi lang mas mabigat na load na puwedeng mag-produce ng parehong waveform o temperature change?';
+      return 'Okay, gets ko yung reasoning ninyo. Pero paano kung mangyari rin ang parehong result dahil sa ibang dahilan? Anong specific observation ang maghihiwalay sa explanation ninyo sa alternative na iyon?';
     }
-    return 'Okay, pero sinabi ninyo na deterioration o abnormal breaker condition ang gusto ninyong makita. Paano ninyo malalaman na breaker problem talaga iyon at hindi lang mas mabigat na load na puwedeng mag-produce ng parehong waveform o temperature change?';
+    return 'Okay, gets ko yung reasoning ninyo. Pero what if mangyari rin yung same result dahil sa ibang dahilan? Anong specific observation ang maghihiwalay sa explanation ninyo sa alternative na iyon?';
   }
 
-  if (/predict|prediction|predictive|early warning|before failure/i.test(lower) || /predict|predictive|early warning/i.test(currentQuestion)) {
+  if (/accuracy|accurate|effective|reliable|successful|works|improve|better|efficient|performance/i.test(lower)) {
     if (language === 'english') {
-      return 'Wait. You are calling this predictive maintenance, but if the system only reacts after the abnormal waveform or temperature appears, that is detection, not prediction. What exactly happens before the event that lets you call this predictive?';
+      return 'You just said the method works well. Let’s say it works on the cases you tested but fails on a case that looks slightly different. What test would reveal that limitation before you claim the method is reliable?';
     }
     if (language === 'tagalog') {
-      return 'Wait lang. Tinatawag ninyo itong predictive maintenance, pero kung nagre-react lang ang system pagkatapos lumitaw ang abnormal waveform o temperature, detection iyon, hindi prediction. Ano mismo ang nangyayari bago ang event na nagpapatunay na predictive talaga ang system?';
+      return 'Sinabi ninyo na effective o reliable yung method. Pero paano kung gumana siya sa mga na-test ninyo tapos bumagsak sa isang slightly different case? Anong test ang magre-reveal ng limitation na iyon bago ninyo sabihing reliable siya?';
     }
-    return 'Wait lang. Tinatawag ninyo itong predictive maintenance, pero kung nagre-react lang ang system pagkatapos lumitaw ang abnormal waveform or temperature, detection iyon, hindi prediction. Ano mismo ang nangyayari bago ang event na nagpapatunay na predictive talaga ang system?';
+    return 'Sinabi ninyo na effective or reliable yung method. Pero paano kung gumana sa mga na-test ninyo pero bumagsak sa slightly different case? Anong test ang magre-reveal ng limitation na iyon bago ninyo sabihing reliable siya?';
   }
 
-  if (/temperature|thermal|heat/i.test(lower)) {
+  if (/predict|prediction|forecast|before|early warning|future/i.test(lower) || /predict|forecast|early warning/i.test(previous.toLowerCase())) {
     if (language === 'english') {
-      return 'But temperature alone is not enough. Suppose the breaker gets hotter because the household suddenly draws more current while the breaker is perfectly healthy. What in your method tells those two cases apart?';
+      return 'Wait. You are saying the system knows something before the event. What evidence shows that the information genuinely appears early, rather than the system reacting to a change that has already started?';
     }
     if (language === 'tagalog') {
-      return 'Pero hindi sapat na umiinit lang ang breaker. Halimbawa, tumaas ang temperature dahil biglang lumaki ang current load pero healthy naman ang breaker. Paano ihihiwalay ng method ninyo ang dalawang sitwasyong iyon?';
+      return 'Wait lang. Sinasabi ninyo na may nalalaman ang system bago mangyari ang event. Anong evidence ang magpapakitang nauuna talaga yung information, at hindi lang nagre-react ang system sa change na nagsimula na?';
     }
-    return 'Pero hindi sapat na umiinit lang ang breaker. Halimbawa, tumaas ang temperature dahil biglang lumaki ang current load pero healthy naman ang breaker. Paano ihihiwalay ng method ninyo ang dalawang sitwasyong iyon?';
+    return 'Wait lang. Sinasabi ninyo na may nalalaman ang system before the event. Anong evidence ang magpapakitang nauuna talaga yung information, at hindi lang nagre-react ang system sa change na nagsimula na?';
   }
 
-  if (/waveform|rms|voltage|current|sampling|sample rate|frequency/i.test(lower)) {
+  if (/dataset|data|sample|respondent|participant|training|model|ai|machine learning|algorithm/i.test(lower)) {
     if (language === 'english') {
-      return 'Okay, but that waveform can change even when the breaker is healthy. If another appliance suddenly changes the load, what stops your system from calling that a breaker fault?';
+      return 'Okay, but your result depends on the data. What if a new case has the same important characteristics but was not represented in your data? What would make you trust the method on that unseen case?';
     }
     if (language === 'tagalog') {
-      return 'Okay, pero puwedeng magbago ang waveform kahit healthy ang breaker. Kung biglang nagbago ang load dahil sa ibang appliance, ano ang pumipigil sa system ninyo na tawagin iyong breaker fault?';
+      return 'Okay, pero naka-depend yung result ninyo sa data. Paano kung may bagong case na may parehong important characteristics pero wala sa data ninyo? Ano ang magiging basis ninyo para pagkatiwalaan yung method sa unseen case na iyon?';
     }
-    return 'Okay, pero puwedeng magbago ang waveform kahit healthy ang breaker. Kung biglang nagbago ang load dahil sa ibang appliance, ano ang pumipigil sa system ninyo na tawagin iyong breaker fault?';
+    return 'Okay, pero naka-depend yung result ninyo sa data. What if may bagong case na may same important characteristics pero wala sa data ninyo? Ano ang basis ninyo para pagkatiwalaan yung method sa unseen case na iyon?';
   }
 
-  if (/train|dataset|machine learning|model|ai|classification|accuracy|precision|recall|false positive|false negative/i.test(lower)) {
+  if (/sensor|measurement|measure|signal|reading|value|temperature|voltage|current|waveform|image|feature|parameter/i.test(lower)) {
     if (language === 'english') {
-      return 'You said the AI can recognize the condition. Let’s say your test data looks good, but the breaker and load combination is different from anything in training. Why should the model still recognize the fault instead of treating it as normal?';
+      return 'You are relying on that measurement. But what if another normal condition changes the same measurement? What in your method separates the condition you care about from that ordinary change?';
     }
     if (language === 'tagalog') {
-      return 'Sabi ninyo kayang i-recognize ng AI ang condition. Pero paano kung ibang breaker at load combination ang gamitin na wala sa training data? Bakit ninyo aasahang makikilala pa rin ng model ang fault at hindi niya iyon ituring na normal?';
+      return 'Umaasa kayo sa measurement na iyan. Pero paano kung may ibang normal condition na nagbabago rin ng parehong measurement? Ano sa method ninyo ang maghihiwalay sa condition na hinahanap ninyo sa normal change na iyon?';
     }
-    return 'Sabi ninyo kayang i-recognize ng AI ang condition. Pero paano kung ibang breaker and load combination ang gamitin na wala sa training data? Bakit ninyo aasahang makikilala pa rin ng model ang fault at hindi niya iyon ituring na normal?';
+    return 'Umaasa kayo sa measurement na iyan. Pero what if may ibang normal condition na nagbabago rin ng same measurement? Ano sa method ninyo ang maghihiwalay sa condition na hinahanap ninyo sa normal change na iyon?';
   }
 
-  if (/esp32|microcontroller|api|cloud|internet|wifi|edge ai|latency/i.test(lower)) {
+  if (/esp32|arduino|microcontroller|api|server|cloud|wifi|internet|latency|hardware|software/i.test(lower)) {
     if (language === 'english') {
-      return 'Okay, but what happens at the exact moment the API or Wi-Fi goes down while the breaker condition is changing? Does your safety-critical decision still happen locally, or does the system simply wait?';
+      return 'Okay, but that part of the system can fail too. If it becomes unavailable at the exact moment your system needs it, what happens to the decision and what evidence shows the rest of your system still behaves correctly?';
     }
     if (language === 'tagalog') {
-      return 'Okay, pero ano ang mangyayari sa exact moment na mawalan ng API o Wi-Fi habang nagbabago ang condition ng breaker? Magde-decide pa rin ba locally ang safety-critical part, o maghihintay lang ang system?';
+      return 'Okay, pero puwede ring mag-fail yung part na iyan. Kung mawala o mag-fail siya exactly when kailangan ng system, ano ang mangyayari sa decision at paano ninyo mapapatunayang tama pa rin ang behavior ng natitirang system?';
     }
-    return 'Okay, pero ano ang mangyayari sa exact moment na mawalan ng API or Wi-Fi habang nagbabago ang condition ng breaker? Magde-decide pa rin ba locally ang safety-critical part, or maghihintay lang ang system?';
+    return 'Okay, pero puwede ring mag-fail yung part na iyan. What if mawala or mag-fail siya exactly when kailangan ng system? Ano ang mangyayari sa decision at paano ninyo mapapatunayang tama pa rin ang behavior ng rest ng system?';
   }
 
-  if (/deteriorat|abnormal condition|abnormal state|degrad|breaker/i.test(lower)) {
-    if (language === 'english') {
-      return 'Okay, but if a healthy breaker and a deteriorating breaker can both experience the same load change, what specific signal difference are you relying on to tell them apart?';
-    }
-    if (language === 'tagalog') {
-      return 'Okay, pero kung parehong puwedeng makaranas ng load change ang healthy at deteriorating breaker, anong specific signal difference ang gagamitin ninyo para mapaghiwalay sila?';
-    }
-    return 'Okay, pero kung parehong puwedeng makaranas ng load change ang healthy at deteriorating breaker, anong specific signal difference ang gagamitin ninyo para mapaghiwalay sila?';
-  }
-
-  if (/predict|forecast|early warning|before failure|preventive/.test(lower)) {
-    if (language === 'english') {
-      return 'You called this predictive maintenance. What exactly is being predicted, how long before the actual failure or abnormal event must the system warn you, and what evidence shows that you are predicting it rather than simply detecting it after it appears?';
-    }
-    if (language === 'tagalog') {
-      return 'Tinatawag ninyo itong predictive maintenance. Ano mismo ang pini-predict ninyo, gaano kaaga bago ang actual failure o abnormal event dapat mag-warning ang system, at anong evidence ang magpapakitang prediction talaga iyon at hindi simpleng detection pagkatapos lumitaw ang problema?';
-    }
-    return 'Tinatawag ninyo itong predictive maintenance. Ano mismo ang pini-predict ninyo, gaano kaaga bago ang actual failure or abnormal event dapat mag-warning ang system, at anong evidence ang magpapatunay na prediction talaga iyon at hindi detection lang pagkatapos lumitaw ang problema?';
-  }
-
-  if (/waveform|rms|voltage|current|sampling|sample rate|frequency/.test(lower)) {
-    if (language === 'english') {
-      return 'You are relying on electrical measurements. Which specific waveform feature or measurement is actually responsible for the decision, what sampling rate are you using, and how did you establish that the feature is caused by the fault rather than ordinary load variation or measurement noise?';
-    }
-    if (language === 'tagalog') {
-      return 'Umaasa kayo sa electrical measurements. Aling specific waveform feature o measurement ang talagang ginagamit sa decision, anong sampling rate ang gamit ninyo, at paano ninyo napatunayang ang feature na iyon ay dahil sa fault at hindi ordinaryong load variation o measurement noise?';
-    }
-    return 'Umaasa kayo sa electrical measurements. Aling specific waveform feature or measurement ang talagang ginagamit sa decision, anong sampling rate ang gamit ninyo, at paano ninyo napatunayang dahil sa fault ang feature na iyon at hindi ordinary load variation or measurement noise?';
-  }
-
-  if (/thermal|temperature|heat|infrared/.test(lower)) {
-    if (language === 'english') {
-      return 'You are also using thermal information. What temperature change is actually considered abnormal, how did you calibrate that threshold across ambient conditions and different loads, and what evidence shows the temperature rise comes from the breaker condition rather than the environment?';
-    }
-    if (language === 'tagalog') {
-      return 'Gumagamit din kayo ng thermal information. Anong temperature change ang itinuturing ninyong abnormal, paano ninyo kino-calibrate ang threshold sa iba-ibang ambient temperature at load, at anong evidence ang magpapatunay na galing sa breaker condition ang pag-init at hindi sa environment?';
-    }
-    return 'Gumagamit din kayo ng thermal information. Anong temperature change ang abnormal para sa system ninyo, paano ninyo kino-calibrate ang threshold sa iba-ibang ambient conditions at loads, at anong evidence ang magpapatunay na breaker condition ang dahilan ng pag-init at hindi environment?';
-  }
-
-  if (/train|dataset|machine learning|model|ai|classification|classif|accuracy|precision|recall|false positive|false negative/.test(lower)) {
-    if (language === 'english') {
-      return 'You said the AI model makes the decision. How were the training labels established, how many genuinely independent fault cases are in the dataset, and how will you show that the model learned breaker-condition patterns rather than memorizing your test data or normal-load signatures?';
-    }
-    if (language === 'tagalog') {
-      return 'Sinabi ninyo na AI model ang gumagawa ng decision. Paano ninyo ginawa ang ground-truth labels, ilang genuinely independent fault cases ang nasa dataset, at paano ninyo mapapatunayang breaker-condition patterns ang natutunan ng model at hindi lang memorized test data o normal-load signatures?';
-    }
-    return 'Sinabi ninyo na AI model ang gumagawa ng decision. Paano ninyo ginawa ang ground-truth labels, ilang genuinely independent fault cases ang nasa dataset, at paano ninyo mapapatunayang breaker-condition patterns ang natutunan ng model at hindi lang memorized test data or normal-load signatures?';
-  }
-
-  if (/esp32|microcontroller|api|cloud|internet|wifi|edge ai|latency/.test(lower)) {
-    if (language === 'english') {
-      return 'You are putting the decision on the hardware and AI pipeline. What happens when the network or API is unavailable, what is the maximum acceptable decision latency, and which part of the safety-critical detection still works locally without depending on the cloud?';
-    }
-    if (language === 'tagalog') {
-      return 'Inilalagay ninyo ang decision sa hardware at AI pipeline. Ano ang mangyayari kapag unavailable ang network o API, ano ang maximum acceptable decision latency, at aling bahagi ng detection ang gumagana locally kahit walang cloud?';
-    }
-    return 'Inilalagay ninyo ang decision sa hardware at AI pipeline. Ano ang mangyayari kapag unavailable ang network or API, ano ang maximum acceptable decision latency, at aling part ng detection ang gumagana locally kahit walang cloud?';
-  }
-
-  if (/accuracy|effective|reliable|valid|successful|works|improv|better|efficient/.test(lower)) {
-    if (language === 'english') {
-      return 'You just claimed that the system is accurate or effective. What exact metric and baseline will you compare it against, what test set will be kept unseen during development, and what result would make you admit that the system did not actually improve on the baseline?';
-    }
-    if (language === 'tagalog') {
-      return 'Sinabi ninyo na accurate o effective ang system. Anong exact metric at baseline ang paghahambingan ninyo, anong test set ang hindi ninyo gagalawin habang nagde-develop, at anong result ang magpapakitang hindi pala nag-improve ang system?';
-    }
-    return 'Sinabi ninyo na accurate or effective ang system. Anong exact metric and baseline ang paghahambingan ninyo, anong test set ang kept unseen during development, at anong result ang magpapakitang hindi pala nag-improve ang system?';
-  }
-
-  const claim = answer.replace(/\s+/g, ' ').slice(0, 220);
+  // Final fallback: quote the student's own claim and introduce one concrete
+  // alternative explanation. It never inserts a sample thesis/domain.
   if (language === 'english') {
-    return 'You said, “' + claim + '.” But suppose a normal operating condition can produce the same result. How exactly will your method distinguish that from the actual fault?';
+    return 'You said, "' + claim + '". Okay, but suppose a different cause produces the same outcome. What specific test would let you tell your explanation apart from that alternative?';
   }
   if (language === 'tagalog') {
-    return 'Sinabi ninyo, “' + claim + '.” Ichi-challenge ko mismo ang claim na iyan: anong measurable observation ang magpapatunay na totoo ito, anong ibang explanation ang puwedeng magbigay ng parehong result, at paano iyon maaalis ng methodology ninyo?';
+    return 'Sinabi ninyo, "' + claim + '". Okay, pero paano kung ibang dahilan ang mag-produce ng parehong outcome? Anong specific test ang maghihiwalay sa explanation ninyo sa alternative na iyon?';
   }
-  return 'Sinabi ninyo, “' + claim + '.” Ichi-challenge ko mismo ang claim na iyan: anong measurable observation ang magpapatunay na totoo ito, anong ibang explanation ang puwedeng magbigay ng parehong result, at paano iyon maaalis ng methodology ninyo?';
+  return 'Sinabi ninyo, "' + claim + '". Okay, pero paano kung ibang dahilan ang mag-produce ng parehong outcome? Anong specific test ang maghihiwalay sa explanation ninyo sa alternative na iyon?';
 }
-
 function safeTopicValue(value, fallback) {
   return String(value || fallback || '').trim().slice(0, 1000);
 }
