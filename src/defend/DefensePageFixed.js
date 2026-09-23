@@ -38,11 +38,8 @@ export default function DefensePage({ onBack }) {
   const [answer, setAnswer] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState('');
-  const [panelChat, setPanelChat] = useState([]);
   const [teamChat, setTeamChat] = useState([]);
-  const [panelMessage, setPanelMessage] = useState('');
   const [teamMessage, setTeamMessage] = useState('');
-  const [panelBusy, setPanelBusy] = useState(false);
   const [error, setError] = useState('');
 
   const memberMap = useMemo(() => Object.fromEntries(participants.map((p) => [p.id, p])), [participants]);
@@ -83,7 +80,6 @@ export default function DefensePage({ onBack }) {
         topic,
         language,
         style,
-        panelChat,
         teamChat,
         started: Boolean(question),
       });
@@ -94,7 +90,6 @@ export default function DefensePage({ onBack }) {
       setTopic(event.topic || '');
       setLanguage(event.language || 'taglish');
       setStyle(event.style || 'aggressive');
-      setPanelChat(event.panelChat || []);
       setTeamChat(event.teamChat || []);
       if (event.started) setScreen('room');
       else setScreen('lobby');
@@ -112,8 +107,6 @@ export default function DefensePage({ onBack }) {
       setTopic(event.topic || topic);
       setAiBusy(false);
       setAiError('');
-    } else if (event.event === 'panel_chat') {
-      setPanelChat((items) => items.some((item) => item.id === event.message?.id) ? items : [...items, event.message]);
     } else if (event.event === 'team_chat') {
       setTeamChat((items) => items.some((item) => item.id === event.message?.id) ? items : [...items, event.message]);
     } else if (event.event === 'settings') {
@@ -178,44 +171,13 @@ export default function DefensePage({ onBack }) {
     setAiBusy(false);
   }
 
-  async function sendPanelMessage() {
-    const text = panelMessage.trim();
-    if (!text || panelBusy) return;
-    const message = { id: crypto.randomUUID(), member: clientId, name, text, createdAt: new Date().toISOString() };
-    const next = [...panelChat, message];
-    setPanelChat(next);
-    setPanelMessage('');
-    setPanelBusy(true);
-    const result = await askPanel({
-      topic,
-      latestAnswer: '',
-      currentMember: { id: clientId, name },
-      members: participants.map((p) => ({ id: p.id, name: p.name })),
-      transcript,
-      panelChat: next,
-      userMessage: text,
-      language,
-      style,
-      phase: 'panel_chat',
-    });
-    if (result.ok && result.reply) {
-      const reply = { id: crypto.randomUUID(), member: 'ai-panel', name: 'AI PANEL', text: result.reply, createdAt: new Date().toISOString(), ai: true };
-      setPanelChat((items) => [...items, reply]);
-      await sendEvent('panel_chat', { message: reply });
-    } else if (!result.ok) {
-      setAiError(result.error || 'The AI panel could not respond.');
-    }
-    await sendEvent('panel_chat', { message });
-    setPanelBusy(false);
-  }
-
   async function sendTeamMessage() {
     const text = teamMessage.trim();
     if (!text) return;
     const message = { id: crypto.randomUUID(), member: clientId, name, text, createdAt: new Date().toISOString() };
     setTeamChat((items) => [...items, message]);
     setTeamMessage('');
-    // IMPORTANT: team_chat is never sent to askPanel, so the AI cannot see this private team discussion.
+    // Team chat is deliberately never sent to the AI.
     await sendEvent('team_chat', { message });
   }
 
@@ -355,13 +317,22 @@ export default function DefensePage({ onBack }) {
           <label>LANGUAGE<select value={language} onChange={async (e) => { const value = e.target.value; setLanguage(value); await sendEvent('settings', { language: value, style }); }}><option value="taglish">🇵🇭 Taglish</option><option value="tagalog">🇵🇭 Tagalog</option><option value="english">🇺🇸 English</option></select></label>
           <label>STYLE<select value={style} onChange={async (e) => { const value = e.target.value; setStyle(value); await sendEvent('settings', { language, style: value }); }}><option value="aggressive">🔥 Aggressive</option><option value="balanced">⚖️ Balanced</option><option value="technical">🧠 Technical</option><option value="formal">🎓 Formal</option></select></label>
           <div className="defend-topic-mini"><small>THESIS TOPIC</small><strong>{topic || THESIS_FALLBACK}</strong></div>
+          <div className="defend-side-chat">
+            <div className="defend-side-chat-head"><strong>TEAM CHAT</strong><span>AI BLIND</span></div>
+            <div className="defend-side-chat-messages">
+              {teamChat.map((item) => <div className="defend-side-chat-msg" key={item.id}><b>{item.name}</b><p>{item.text}</p></div>)}
+              {!teamChat.length && <small>Talk privately with your group. The AI cannot see this.</small>}
+            </div>
+            <div className="defend-side-chat-compose"><input value={teamMessage} onChange={(e) => setTeamMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendTeamMessage()} placeholder="Talk to your group…"/><button onClick={sendTeamMessage} disabled={!teamMessage.trim()}>→</button></div>
+          </div>
         </aside>
         <main>
           <div className="defend-thesis"><small>LIVE DEFENSE · SHARED TOPIC</small><strong>{topic || THESIS_FALLBACK}</strong></div>
           <section className="defend-panel">
-            <div className="defend-panel-meta">● AI PANELIST · {language.toUpperCase()} <em>{aiBusy ? 'Analyzing the group…' : 'Listening to the entire defense'}</em></div>
+            <div className="defend-panel-meta">● AI PANELIST · {language.toUpperCase()} <em>{aiBusy ? 'Thinking about what to ask next…' : 'Listening to the entire defense'}</em></div>
+            {aiBusy && <div className="defend-ai-thinking"><span className="defend-thinking-dot"></span><div><strong>AI PANELIST IS THINKING</strong><small>Reviewing your answer, the thesis topic, and the group's previous answers before responding.</small></div></div>}
             <h1>{question || OPENING_QUESTION}</h1>
-            <div className="defend-attack"><b>{aiBusy ? 'AI THINKING' : 'ADAPTIVE ATTACK'}</b><span>{aiBusy ? 'The panel is analyzing the latest answer and the full group transcript before choosing its next target.' : 'The panel uses the group’s previous answers to target unsupported claims, contradictions, and methodology gaps.'}</span></div>
+            <div className="defend-attack"><b>{aiBusy ? 'ANALYZING' : 'ADAPTIVE ATTACK'}</b><span>{aiBusy ? 'The panel is analyzing the latest answer and the full group transcript before choosing what to say next.' : 'The panel uses the group’s previous answers to target unsupported claims, contradictions, and methodology gaps.'}</span></div>
           </section>
           <section className="defend-answer defend-card">
             <div><small>ANSWERING</small><strong>{currentName}</strong></div>
@@ -369,24 +340,6 @@ export default function DefensePage({ onBack }) {
             <textarea disabled={currentMember !== clientId || aiBusy} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={currentMember === clientId ? 'Your answer is shared with everyone in the room…' : 'Wait for your turn…'} />
             <button className="defend-primary wide" disabled={currentMember !== clientId || !answer.trim() || aiBusy} onClick={submitAnswer}>{aiBusy ? 'AI is analyzing…' : 'Submit to AI panel →'}</button>
             {aiError && <div className="defend-error">{aiError}</div>}
-          </section>
-          <section className="defend-chat-grid">
-            <div className="defend-chat defend-card">
-              <div className="defend-chat-head"><div><strong>AI PANEL CHAT</strong><small>Visible to the AI · use this to address the panel</small></div><span>AI SEES THIS</span></div>
-              <div className="defend-chat-messages">
-                {panelChat.map((item) => <div className={item.ai ? 'defend-chat-msg ai' : 'defend-chat-msg'} key={item.id}><b>{item.ai ? 'AI PANEL' : item.name}</b><p>{item.text}</p></div>)}
-                {!panelChat.length && <div className="defend-empty">Ask the panel something. The AI can see this chat together with the defense transcript.</div>}
-              </div>
-              <div className="defend-chat-compose"><input value={panelMessage} onChange={(e) => setPanelMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendPanelMessage()} placeholder="Talk to the AI panel…" disabled={panelBusy}/><button onClick={sendPanelMessage} disabled={!panelMessage.trim() || panelBusy}>Send</button></div>
-            </div>
-            <div className="defend-chat defend-card">
-              <div className="defend-chat-head"><div><strong>TEAM CHAT</strong><small>For your group only · AI cannot see this</small></div><span>AI BLIND</span></div>
-              <div className="defend-chat-messages">
-                {teamChat.map((item) => <div className="defend-chat-msg team" key={item.id}><b>{item.name}</b><p>{item.text}</p></div>)}
-                {!teamChat.length && <div className="defend-empty">Chitchat here. Discuss how to answer without feeding the AI your strategy.</div>}
-              </div>
-              <div className="defend-chat-compose"><input value={teamMessage} onChange={(e) => setTeamMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendTeamMessage()} placeholder="Talk to your group…"/><button onClick={sendTeamMessage} disabled={!teamMessage.trim()}>Send</button></div>
-            </div>
           </section>
           <section className="defend-feed defend-card">
             <div className="defend-feed-head">LIVE DEFENSE FEED <span>Shared with the entire group</span></div>
