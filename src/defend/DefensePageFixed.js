@@ -74,6 +74,7 @@ export default function DefensePage({ onBack }) {
   const [currentMember, setCurrentMember] = useState(clientId);
   const [answer, setAnswer] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
+  const [aiThinkingStage, setAiThinkingStage] = useState(0);
   const [aiError, setAiError] = useState('');
   const [panelClarification, setPanelClarification] = useState('');
   const [clarifyBusy, setClarifyBusy] = useState(false);
@@ -99,6 +100,7 @@ export default function DefensePage({ onBack }) {
     setTopic('');
     setAnswer('');
     setAiBusy(false);
+    setAiThinkingStage(0);
     setAiError('');
     setError('');
     setRoom('');
@@ -106,6 +108,17 @@ export default function DefensePage({ onBack }) {
   }
 
   useEffect(() => () => { disconnectRoom(); }, []);
+
+  useEffect(() => {
+    if (!aiBusy) {
+      setAiThinkingStage(0);
+      return undefined;
+    }
+    const timer = setInterval(() => {
+      setAiThinkingStage((value) => (value + 1) % 3);
+    }, 1600);
+    return () => clearInterval(timer);
+  }, [aiBusy]);
 
   async function joinRealtime(roomCode = room) {
     if (!realtimeConfigured) {
@@ -437,7 +450,7 @@ export default function DefensePage({ onBack }) {
           <div className="defend-thesis"><small>LIVE DEFENSE · SHARED TOPIC</small><strong>{topic || THESIS_FALLBACK}</strong></div>
           <section className="defend-panel">
             <div className="defend-panel-meta">● AI PANELIST · {language.toUpperCase()} <em>{aiBusy ? 'Thinking about what to ask next…' : 'Listening to the entire defense'}</em></div>
-            {aiBusy && <div className="defend-ai-thinking"><span className="defend-thinking-dot"></span><div><strong>AI PANELIST IS THINKING</strong><small>Reviewing your answer, the thesis topic, and the group's previous answers before responding.</small></div></div>}
+            {aiBusy && <div className="defend-ai-thinking"><span className="defend-thinking-dot"></span><div><strong>AI PANELIST IS THINKING</strong><small>{['Reading your answer and the question it responds to…','Finding the specific weak point or contradiction…','Building the next attack from your actual defense…'][aiThinkingStage]}</small></div></div>}
             <h1>{question || openingQuestion(language)}</h1>
             <div className="defend-attack"><b>{aiBusy ? 'ANALYZING' : 'ADAPTIVE ATTACK'}</b><span>{aiBusy ? 'The panel is analyzing the latest answer and the full group transcript before choosing what to say next.' : 'The panel uses the group’s previous answers to target unsupported claims, contradictions, and methodology gaps.'}</span></div>
             {panelClarification && <div className="defend-panel-clarification"><small>AI PANEL CLARIFICATION</small><p>{panelClarification}</p></div>}
