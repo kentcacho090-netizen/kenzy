@@ -22,6 +22,23 @@ function memberName(people, id, fallbackName) {
   return people.find((p) => p.id === id)?.name || (id === clientId ? fallbackName : 'Member');
 }
 
+function ExitConfirm({ onCancel, onConfirm }) {
+  return (
+    <div className="defend-exit-overlay" role="dialog" aria-modal="true" aria-labelledby="defend-exit-title">
+      <div className="defend-exit-dialog">
+        <div className="defend-exit-icon">!</div>
+        <div className="defend-eyebrow">LEAVE DEFENSE ROOM</div>
+        <h2 id="defend-exit-title">Exit this room?</h2>
+        <p>Your live defense connection will be closed. Your group can continue, but you will leave this room.</p>
+        <div className="defend-exit-actions">
+          <button className="defend-secondary" onClick={onCancel}>Stay in room</button>
+          <button className="defend-exit-confirm" onClick={onConfirm}>Exit room</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DefensePage({ onBack }) {
   const [screen, setScreen] = useState('home');
   const [isCreator, setIsCreator] = useState(false);
@@ -41,9 +58,30 @@ export default function DefensePage({ onBack }) {
   const [teamChat, setTeamChat] = useState([]);
   const [teamMessage, setTeamMessage] = useState('');
   const [error, setError] = useState('');
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   const memberMap = useMemo(() => Object.fromEntries(participants.map((p) => [p.id, p])), [participants]);
   const currentName = memberName(participants, currentMember, name);
+
+  function requestExit() {
+    setShowExitConfirm(true);
+  }
+
+  async function confirmExit() {
+    setShowExitConfirm(false);
+    await disconnectRoom();
+    setParticipants([]);
+    setTranscript([]);
+    setTeamChat([]);
+    setQuestion('');
+    setTopic('');
+    setAnswer('');
+    setAiBusy(false);
+    setAiError('');
+    setError('');
+    setRoom('');
+    setScreen('home');
+  }
 
   useEffect(() => () => { disconnectRoom(); }, []);
 
@@ -288,7 +326,7 @@ export default function DefensePage({ onBack }) {
 
   if (screen === 'lobby') return (
     <section className="defend-shell">
-      <header className="defend-top"><button className="defend-back" onClick={() => setScreen('home')}>← Exit</button><strong>DEFEND</strong><span className={status === 'SYNCED' ? 'defend-sync' : 'defend-sync warn'}>● {status}</span><b>{room}</b></header>
+      <header className="defend-top"><button className="defend-back defend-exit-trigger" onClick={requestExit}>← Exit</button><strong>DEFEND</strong><span className={status === 'SYNCED' ? 'defend-sync' : 'defend-sync warn'}>● {status}</span><b>{room}</b></header>
       <div className="defend-lobby">
         <main className="defend-card">
           <div className="defend-eyebrow">ROOM LOBBY</div>
@@ -309,7 +347,7 @@ export default function DefensePage({ onBack }) {
 
   return (
     <section className="defend-shell">
-      <header className="defend-top"><button className="defend-back" onClick={() => setScreen('home')}>← Exit</button><strong>DEFEND · LIVE</strong><span className={status === 'SYNCED' ? 'defend-sync' : 'defend-sync warn'}>● {status}</span><b>{room}</b></header>
+      <header className="defend-top"><button className="defend-back defend-exit-trigger" onClick={requestExit}>← Exit</button><strong>DEFEND · LIVE</strong><span className={status === 'SYNCED' ? 'defend-sync' : 'defend-sync warn'}>● {status}</span><b>{room}</b></header>
       <div className="defend-room">
         <aside className="defend-card defend-sidebar">
           <div className="defend-side-title">THESIS TEAM <span>{participants.length} online</span></div>
@@ -347,6 +385,7 @@ export default function DefensePage({ onBack }) {
           </section>
         </main>
       </div>
+      {showExitConfirm && <ExitConfirm onCancel={() => setShowExitConfirm(false)} onConfirm={confirmExit} />}
     </section>
   );
 }
