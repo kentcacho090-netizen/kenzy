@@ -240,6 +240,32 @@ function safeTopicValue(value, fallback) {
   return String(value || fallback || '').trim().slice(0, 1000);
 }
 
+function extractTopic(value, fallback = '') {
+  const raw = String(value || fallback || '').replace(/\\s+/g, ' ').trim();
+  if (!raw) return '';
+  const cleaned = raw
+    .replace(/^(?:our\\s+)?(?:thesis\\s+)?(?:topic|title)\\s*(?:is|:|-)?\\s*/i, '')
+    .replace(/^the\\s+study\\s+(?:is|titled)\\s+/i, '')
+    .trim();
+
+  // The title is normally the first clear sentence/line of the opening response.
+  const firstSentence = cleaned.split(/(?<=[.!?])\\s+/)[0].trim();
+  const firstLine = cleaned.split(/\\n+/)[0].trim();
+  const candidates = [firstSentence, firstLine, cleaned];
+  const useful = candidates.find((item) =>
+    item &&
+    item.length <= 180 &&
+    !/^(?:our study|the study|we aim|our objective|the problem|our system|this study)\\b/i.test(item)
+  );
+
+  if (useful) return useful.replace(/[.!?]+$/, '').slice(0, 180);
+
+  // If the opening response starts with a title followed by a long explanation,
+  // keep only the first clause instead of flooding the shared topic card.
+  const compact = cleaned.split(/\\s+(?:our study|the study|we aim|our objective|the problem|this study)\\b/i)[0].trim();
+  return (compact || cleaned).replace(/[.!?]+$/, '').slice(0, 180);
+}
+
 async function fetchWithTimeout(url, options, timeoutMs = 6500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -286,7 +312,7 @@ module.exports = async function handler(req, res) {
 
     const state = {
       phase,
-      topic: String(topic).slice(0, 1500),
+      topic: extractTopic(topic).slice(0, 220),
       latestAnswer: String(latestAnswer).slice(0, 5000),
       currentQuestion: String(currentQuestion).slice(0, 2500),
       currentMember: {
@@ -300,6 +326,7 @@ module.exports = async function handler(req, res) {
       transcript: (Array.isArray(transcript) ? transcript : []).map((item) => ({
         id: String(item?.id || ''),
         member: String(item?.member || ''),
+        question: String(item?.question || '').slice(0, 1800),
         answer: String(item?.answer || '').slice(0, 1800),
         createdAt: item?.createdAt || '',
       })),
@@ -412,7 +439,9 @@ Use these examples as behavioral patterns, not as text to copy. Continue from th
               return send(res, 200, {
                 reply: String(result.reply || 'Let me clarify what I mean by that question.').slice(0, 3000),
                 question: '',
-                topic: safeTopicValue(result.topic, topic || latestAnswer.slice(0, 500)),
+                topic: phase === 'topic_intake'
+                ? extractTopic(result.topic || latestAnswer, topic)
+                : extractTopic(result.topic || topic, latestAnswer).slice(0, 180),
                 finish: false,
               });
             }
@@ -452,7 +481,7 @@ Use these examples as behavioral patterns, not as text to copy. Continue from th
         currentMember,
       }),
       nextMember: String(currentMember?.id || normalizedMembers?.[0]?.id || ''),
-      topic: safeTopicValue(topic, latestAnswer || ''),
+      topic: phase === 'topic_intake' ? extractTopic(latestAnswer, topic) : extractTopic(topic, latestAnswer),
       finish: false,
       degraded: true,
       providerStatus: lastStatus,
@@ -468,7 +497,9 @@ Use these examples as behavioral patterns, not as text to copy. Continue from th
         currentMember: req.body?.currentMember,
       }),
       nextMember: String(req.body?.currentMember?.id || ''),
-      topic: safeTopicValue(req.body?.topic, req.body?.latestAnswer || ''),
+      topic: req.body?.phase === 'topic_intake'
+        ? extractTopic(req.body?.latestAnswer, req.body?.topic)
+        : extractTopic(req.body?.topic, req.body?.latestAnswer),
       finish: false,
       degraded: true,
     });
