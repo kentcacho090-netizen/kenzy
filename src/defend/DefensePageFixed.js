@@ -268,19 +268,8 @@ export default function DefensePage({ onBack }) {
     }
 
     if (result.topic) setTopic(result.topic);
-    if (result.finish) {
-      setQuestion(result.question || 'The panel has enough evidence for this defense.');
-      setCurrentMember(clientId);
-      setAiBusy(false);
-      await sendEvent('answer', {
-        answer: item,
-        nextMember: clientId,
-        nextQuestion: result.question || 'The panel has enough evidence for this defense.',
-        topic: result.topic || topic,
-      });
-      return;
-    }
-
+    // DEFEND is intentionally continuous: every answer produces another attack.
+    // There is no "finished" state during the live defense.
     const nextMember = people.some((p) => p.id === result.nextMember)
       ? result.nextMember
       : people[(people.findIndex((p) => p.id === clientId) + 1) % people.length]?.id || clientId;
