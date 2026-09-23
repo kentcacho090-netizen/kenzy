@@ -98,7 +98,18 @@ export async function askPanel(payload = {}) {
     if (error) return { ok: false, error: error.message || 'AI panel request failed.' };
     return { ok: true, ...data };
   } catch (error) {
-    return { ok: false, error: error?.message || 'AI panel request failed.' };
+    let detail = error?.message || 'AI panel request failed.';
+    try {
+      const ctx = error?.context;
+      if (ctx) {
+        const body = typeof ctx.text === 'function' ? await ctx.text() : '';
+        if (body) {
+          const parsed = JSON.parse(body);
+          detail = parsed?.error || parsed?.message || detail;
+        }
+      }
+    } catch {}
+    return { ok: false, error: detail };
   }
 }
 
