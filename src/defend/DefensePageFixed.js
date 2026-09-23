@@ -2,7 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './DefensePage.css';
 import { askPanel, clientId, connectRoom, disconnectRoom, realtimeConfigured, sendEvent, updateRoomPresence } from './realtime';
 
-const OPENING_QUESTION = 'Before we begin, what is your thesis topic or title? Please state it clearly, and briefly explain what your study is trying to solve.';\n\nfunction openingQuestion(language) {\n  if (language === 'tagalog') return 'Bago tayo magsimula, ano ang thesis topic o title ninyo? Sabihin nang malinaw, at maikling ipaliwanag kung anong problema ang sinusubukan ninyong solusyunan ng study.';\n  if (language === 'taglish') return 'Before we begin, ano ang thesis topic or title ninyo? Sabihin nang malinaw, then briefly explain kung anong problem ang sinusubukan ninyong i-solve ng study.';\n  return OPENING_QUESTION;\n}
+const OPENING_QUESTION = 'Before we begin, what is your thesis topic or title? Please state it clearly, and briefly explain what your study is trying to solve.';
+
+function openingQuestion(language) {
+  if (language === 'tagalog') return 'Bago tayo magsimula, ano ang thesis topic o title ninyo? Sabihin nang malinaw, at maikling ipaliwanag kung anong problema ang sinusubukan ninyong solusyunan ng study.';
+  if (language === 'taglish') return 'Before we begin, ano ang thesis topic or title ninyo? Sabihin nang malinaw, then briefly explain kung anong problem ang sinusubukan ninyong i-solve ng study.';
+  return OPENING_QUESTION;
+}
 const THESIS_FALLBACK = 'Your thesis topic has not been provided yet.';
 
 function makeRoomCode() {
