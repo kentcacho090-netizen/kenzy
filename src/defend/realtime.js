@@ -115,9 +115,32 @@ export async function updateRoomPresence({ name, role, language, style }) {
   }
 }
 
+function localDefenseFallback(payload = {}) {
+  const answer = String(payload.latestAnswer || '').trim();
+  const language = String(payload.currentMember?.language || payload.language || 'taglish').toLowerCase();
+  const topic = String(payload.topic || '').trim();
+  const focus = answer ? answer.slice(0, 180) : topic.slice(0, 180);
+
+  if (language === 'english') {
+    return focus
+      ? `You said “${focus}”. What specific evidence supports that claim, and what is the main limitation or assumption that could make your conclusion wrong?`
+      : 'What is the weakest assumption in your study, and what evidence would you use to defend it?';
+  }
+
+  if (language === 'tagalog') {
+    return focus
+      ? `Sinabi ninyo na “${focus}”. Anong specific evidence ang sumusuporta rito, at ano ang pangunahing limitation o assumption na puwedeng magpahina sa conclusion ninyo?`
+      : 'Ano ang pinakamahinang assumption sa study ninyo, at anong evidence ang gagamitin ninyo para ipagtanggol ito?';
+  }
+
+  return focus
+    ? `Okay, sinabi ninyo na “${focus}”. Anong specific evidence ang sumusuporta rito, at ano ang pinaka-critical na limitation o assumption na puwedeng magpabagsak sa conclusion ninyo?`
+    : 'Okay, ano ang pinaka-mahinang assumption sa study ninyo, at paano ninyo mapapatunayang valid iyon?';
+}
+
 export async function askPanel(payload = {}) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10500);
+  const timer = setTimeout(() => controller.abort(), 9500);
   try {
     const response = await fetch('/api/defend-panel', {
       method: 'POST',
@@ -128,15 +151,23 @@ export async function askPanel(payload = {}) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       return {
-        ok: false,
-        error: 'The AI panel could not respond. Please try again.',
+        ok: true,
+        question: localDefenseFallback(payload),
+        nextMember: payload.currentMember?.id || '',
+        topic: payload.topic || payload.latestAnswer || '',
+        finish: false,
+        degraded: true,
       };
     }
-    return { ok: true, ...data };
+    return { ok: true, ...data, finish: false };
   } catch {
     return {
-      ok: false,
-      error: 'The AI panel is taking too long. Please try submitting again.',
+      ok: true,
+      question: localDefenseFallback(payload),
+      nextMember: payload.currentMember?.id || '',
+      topic: payload.topic || payload.latestAnswer || '',
+      finish: false,
+      degraded: true,
     };
   } finally {
     clearTimeout(timer);
