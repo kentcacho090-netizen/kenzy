@@ -121,6 +121,32 @@ function localDefenseFallback(payload = {}) {
   const language = String(payload.currentMember?.language || payload.language || 'taglish').toLowerCase();
   const lower = answer.toLowerCase();
 
+  // If the API is temporarily unavailable, do not spam the same attack. Use the
+  // current question as the attack state and escalate from the student's latest answer.
+  if (/predict|prediction|predictive|early warning/i.test(question) && /before|lead time|advance|minutes?|hours?|days?|window/i.test(lower)) {
+    if (language === 'english') return 'Okay, so you are claiming there is a real lead time. Let’s say the warning appears 30 seconds before a trip but disappears when the load changes. What experiment would show that the warning is tied to deterioration rather than a temporary operating condition?';
+    if (language === 'tagalog') return 'Okay, sinasabi ninyo na may real lead time. Pero paano kung lumabas ang warning 30 seconds bago mag-trip at mawala kapag nagbago ang load? Anong experiment ang magpapakitang deterioration ang dahilan at hindi temporary operating condition?';
+    return 'Okay, sinasabi ninyo na may real lead time. Pero paano kung lumabas ang warning 30 seconds before mag-trip at mawala kapag nagbago ang load? Anong experiment ang magpapakitang deterioration ang dahilan at hindi temporary operating condition?';
+  }
+
+  if (/predict|prediction|predictive|early warning/i.test(question)) {
+    if (language === 'english') return 'Wait. You answered that it predicts the event before it happens. How are you defining the prediction window—seconds, minutes, or hours—and what measured signal must change during that window?';
+    if (language === 'tagalog') return 'Wait lang. Sabi ninyo prediction dahil nauuna ang warning. Paano ninyo dini-define ang prediction window—seconds, minutes, o hours—and anong measured signal ang dapat magbago sa window na iyon?';
+    return 'Wait lang. Sabi ninyo prediction dahil nauuna ang warning. Paano ninyo dini-define ang prediction window—seconds, minutes, or hours—and anong measured signal ang dapat magbago sa window na iyon?';
+  }
+
+  if (/temperature|thermal|heat/i.test(question) && /load|current|appliance|ambient/i.test(lower)) {
+    if (language === 'english') return 'Good, you separated temperature rise from load change. Now suppose ambient temperature also changes throughout the day. What reference or normalization keeps that from looking like breaker deterioration?';
+    if (language === 'tagalog') return 'Okay, na-separate ninyo ang temperature rise sa load change. Pero paano kung nagbabago rin ang ambient temperature buong araw? Anong reference o normalization ang pipigil na magmukhang breaker deterioration ang environmental change?';
+    return 'Okay, na-separate ninyo ang temperature rise sa load change. Pero paano kung nagbabago rin ang ambient temperature buong araw? Anong reference or normalization ang pipigil na magmukhang breaker deterioration ang environmental change?';
+  }
+
+  if (/waveform|rms|sampling|frequency/i.test(question) && /load|appliance|noise|sensor/i.test(lower)) {
+    if (language === 'english') return 'You accounted for load variation. Now imagine the waveform change is only a short transient caused by another appliance. What time window or feature prevents that transient from becoming a false breaker warning?';
+    if (language === 'tagalog') return 'Na-account ninyo ang load variation. Pero paano kung short transient lang ang waveform change dahil sa ibang appliance? Anong time window o feature ang pipigil na maging false breaker warning iyon?';
+    return 'Na-account ninyo ang load variation. Pero paano kung short transient lang ang waveform change dahil sa ibang appliance? Anong time window or feature ang pipigil na maging false breaker warning iyon?';
+  }
+
   if (/predict|prediction|predictive|early warning|before failure/i.test(lower) || /predict|predictive|early warning/i.test(question)) {
     if (language === 'english') return 'Wait. You are calling this predictive maintenance, but if the system only reacts after the abnormal waveform or temperature appears, that is detection, not prediction. What exactly happens before the event that lets you call this predictive?';
     if (language === 'tagalog') return 'Wait lang. Tinatawag ninyo itong predictive maintenance, pero kung nagre-react lang ang system pagkatapos lumitaw ang abnormal waveform o temperature, detection iyon, hindi prediction. Ano mismo ang nangyayari bago ang event na nagpapatunay na predictive talaga ang system?';
