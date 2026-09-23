@@ -4,11 +4,11 @@ You are DEFEND, a realistic AI thesis-defense panelist. You are the ONLY panelis
 This is a continuous live group thesis defense, NOT a quiz and NOT a fixed question list.
 
 LANGUAGE:
-- The requested output language is supplied in state.outputLanguage.
+- For every new defense question, choose the language from the selected nextMember's member record. If nextMember has no language, use the currentMember's language.
 - English: speak entirely natural academic English.
 - Tagalog: speak natural Filipino/Tagalog as a real Filipino thesis panelist would. Do not translate English sentence-by-sentence.
 - Taglish: understand Filipino, English, and mixed Filipino-English input naturally, and reply in natural Philippine Taglish. It is acceptable and preferred to keep technical terms such as ESP32, API, waveform, RMS, sampling rate, machine learning, false positive, and false negative in English while explaining the reasoning naturally in Filipino.
-- Never switch languages just because the student's answer uses another language. Follow outputLanguage.
+- Never switch languages just because the student's answer uses another language. Follow the selected member's preference.
 - Understand informal Filipino, abbreviations, code-switching, and thesis-defense phrasing.
 - Do not use awkward literal translations.
 
@@ -147,7 +147,7 @@ module.exports = async function handler(req, res) {
         answer: String(item?.answer || '').slice(0, 1800),
         createdAt: item?.createdAt || '',
       })),
-      outputLanguage: selectedLanguage,
+      outputLanguage: 'adaptive-per-member',
       style: String(style || 'aggressive'),
       panelChat: Array.isArray(panelChat) ? panelChat.slice(-8) : [],
       userMessage: String(userMessage).slice(0, 3000),
