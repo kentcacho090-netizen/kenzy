@@ -117,7 +117,7 @@ export async function updateRoomPresence({ name, role, language, style }) {
 
 export async function askPanel(payload = {}) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 12000);
+  const timer = setTimeout(() => controller.abort(), 10500);
   try {
     const response = await fetch('/api/defend-panel', {
       method: 'POST',
