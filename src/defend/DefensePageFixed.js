@@ -94,6 +94,8 @@ export default function DefensePage({ onBack }) {
     const result = await connectRoom(roomCode, {
       name,
       role: isCreator ? 'controller' : 'member',
+      language,
+      style,
       onStatus: setStatus,
       onPresence: (people) => setParticipants(
         people.sort((a, b) => new Date(a.joinedAt) - new Date(b.joinedAt))
@@ -133,7 +135,7 @@ export default function DefensePage({ onBack }) {
       else setScreen('lobby');
     } else if (event.event === 'start') {
       setCurrentMember(event.currentMember || clientId);
-      setQuestion(event.question || OPENING_QUESTION);
+      setQuestion(event.question || openingQuestion(event.language || language));
       setTopic(event.topic || '');
       setLanguage(event.language || language);
       setStyle(event.style || style);
@@ -141,7 +143,7 @@ export default function DefensePage({ onBack }) {
     } else if (event.event === 'answer') {
       setTranscript((items) => items.some((item) => item.id === event.answer.id) ? items : [...items, event.answer]);
       setCurrentMember(event.nextMember || clientId);
-      setQuestion(event.nextQuestion || OPENING_QUESTION);
+      setQuestion(event.nextQuestion || openingQuestion(language));
       setTopic(event.topic || topic);
       setAiBusy(false);
       setAiError('');
@@ -236,12 +238,17 @@ export default function DefensePage({ onBack }) {
     setAiBusy(true);
     setAiError('');
 
-    const people = participants.length ? participants : [{ id: clientId, name }];
+    const people = participants.length ? participants : [{ id: clientId, name, language, style }];
     const result = await askPanel({
       topic,
       latestAnswer: text,
-      currentMember: { id: clientId, name },
-      members: people.map((p) => ({ id: p.id, name: p.name })),
+      currentMember: { id: clientId, name, language, style },
+      members: people.map((p) => ({
+        id: p.id,
+        name: p.name,
+        language: p.language || language,
+        style: p.style || style,
+      })),
       transcript: nextTranscript,
       language,
       style,
