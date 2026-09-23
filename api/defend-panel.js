@@ -198,7 +198,7 @@ module.exports = async function handler(req, res) {
             'x-goog-api-key': apiKey,
           },
           body: JSON.stringify(requestBody),
-        }, 6500);
+        }, 4500);
 
         const raw = await response.text();
         try { provider = JSON.parse(raw); } catch { provider = {}; }
