@@ -395,8 +395,11 @@ module.exports = async function handler(req, res) {
     // Flash model. Avoid retrying every model twice: that made temporary capacity
     // issues feel like the UI was frozen.
     const models = [
-      { id: 'gemini-3.8-flash', thinkingLevel: 'low', timeoutMs: 4500 },
-      { id: 'gemini-3.5-flash', thinkingLevel: 'low', timeoutMs: 3500 },
+      // Give the primary panel enough thinking time to understand the latest answer
+      // and build a real follow-up attack. A lower-latency model remains available
+      // as a resilience fallback.
+      { id: 'gemini-3.8-flash', thinkingLevel: 'medium', timeoutMs: 7000 },
+      { id: 'gemini-3.5-flash', thinkingLevel: 'low', timeoutMs: 4500 },
     ];
 
     let provider = {};
