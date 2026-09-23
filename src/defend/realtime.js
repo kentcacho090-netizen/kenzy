@@ -91,6 +91,17 @@ export async function connectRoom(roomCode, { name, role, onPresence, onEvent, o
   });
 }
 
+export async function askPanel(payload = {}) {
+  if (!supabase) return { ok: false, error: 'Supabase is not configured.' };
+  try {
+    const { data, error } = await supabase.functions.invoke('defend-panel', { body: payload });
+    if (error) return { ok: false, error: error.message || 'AI panel request failed.' };
+    return { ok: true, ...data };
+  } catch (error) {
+    return { ok: false, error: error?.message || 'AI panel request failed.' };
+  }
+}
+
 export async function sendEvent(event, payload = {}) {
   if (!channel) return false;
   try {
