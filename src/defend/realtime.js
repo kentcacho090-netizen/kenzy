@@ -117,30 +117,63 @@ export async function updateRoomPresence({ name, role, language, style }) {
 
 function localDefenseFallback(payload = {}) {
   const answer = String(payload.latestAnswer || '').trim();
+  const question = String(payload.currentQuestion || '').trim();
   const language = String(payload.currentMember?.language || payload.language || 'taglish').toLowerCase();
-  const topic = String(payload.topic || '').trim();
-  const focus = answer ? answer.slice(0, 180) : topic.slice(0, 180);
+  const lower = answer.toLowerCase();
 
-  if (language === 'english') {
-    return focus
-      ? `You said “${focus}”. What specific evidence supports that claim, and what is the main limitation or assumption that could make your conclusion wrong?`
-      : 'What is the weakest assumption in your study, and what evidence would you use to defend it?';
+  if (/predict|prediction|predictive|early warning|before failure/i.test(lower) || /predict|predictive|early warning/i.test(question)) {
+    if (language === 'english') return 'Wait. You are calling this predictive maintenance, but if the system only reacts after the abnormal waveform or temperature appears, that is detection, not prediction. What exactly happens before the event that lets you call this predictive?';
+    if (language === 'tagalog') return 'Wait lang. Tinatawag ninyo itong predictive maintenance, pero kung nagre-react lang ang system pagkatapos lumitaw ang abnormal waveform o temperature, detection iyon, hindi prediction. Ano mismo ang nangyayari bago ang event na nagpapatunay na predictive talaga ang system?';
+    return 'Wait lang. Tinatawag ninyo itong predictive maintenance, pero kung nagre-react lang ang system pagkatapos lumitaw ang abnormal waveform or temperature, detection iyon, hindi prediction. Ano mismo ang nangyayari bago ang event na nagpapatunay na predictive talaga ang system?';
   }
 
-  if (language === 'tagalog') {
-    return focus
-      ? `Sinabi ninyo na “${focus}”. Anong specific evidence ang sumusuporta rito, at ano ang pangunahing limitation o assumption na puwedeng magpahina sa conclusion ninyo?`
-      : 'Ano ang pinakamahinang assumption sa study ninyo, at anong evidence ang gagamitin ninyo para ipagtanggol ito?';
+  if (/temperature|thermal|heat/i.test(lower)) {
+    if (language === 'english') return 'But temperature alone is not enough. Suppose the breaker gets hotter because the household suddenly draws more current while the breaker is healthy. What in your method tells those two cases apart?';
+    if (language === 'tagalog') return 'Pero hindi sapat na umiinit lang ang breaker. Halimbawa, tumaas ang temperature dahil biglang lumaki ang current load pero healthy naman ang breaker. Paano ihihiwalay ng method ninyo ang dalawang sitwasyong iyon?';
+    return 'Pero hindi sapat na umiinit lang ang breaker. Halimbawa, tumaas ang temperature dahil biglang lumaki ang current load pero healthy naman ang breaker. Paano ihihiwalay ng method ninyo ang dalawang sitwasyong iyon?';
   }
 
-  return focus
-    ? `Okay, sinabi ninyo na “${focus}”. Anong specific evidence ang sumusuporta rito, at ano ang pinaka-critical na limitation o assumption na puwedeng magpabagsak sa conclusion ninyo?`
-    : 'Okay, ano ang pinaka-mahinang assumption sa study ninyo, at paano ninyo mapapatunayang valid iyon?';
+  if (/waveform|rms|voltage|current|sampling|sample rate|frequency/i.test(lower)) {
+    if (language === 'english') return 'Okay, but that waveform can change even when the breaker is healthy. If another appliance suddenly changes the load, what stops your system from calling that a breaker fault?';
+    if (language === 'tagalog') return 'Okay, pero puwedeng magbago ang waveform kahit healthy ang breaker. Kung biglang nagbago ang load dahil sa ibang appliance, ano ang pumipigil sa system ninyo na tawagin iyong breaker fault?';
+    return 'Okay, pero puwedeng magbago ang waveform kahit healthy ang breaker. Kung biglang nagbago ang load dahil sa ibang appliance, ano ang pumipigil sa system ninyo na tawagin iyong breaker fault?';
+  }
+
+  if (/ai|model|dataset|training|classification|accuracy|precision|recall|false negative|false positive/i.test(lower)) {
+    if (language === 'english') return 'You said the AI can recognize the condition. But what happens when the breaker and load combination is different from anything in training? Why should the model recognize the fault instead of treating it as normal?';
+    if (language === 'tagalog') return 'Sabi ninyo kayang i-recognize ng AI ang condition. Pero paano kung ibang breaker at load combination ang gamitin na wala sa training data? Bakit ninyo aasahang makikilala pa rin ng model ang fault at hindi niya iyon ituring na normal?';
+    return 'Sabi ninyo kayang i-recognize ng AI ang condition. Pero paano kung ibang breaker and load combination ang gamitin na wala sa training data? Bakit ninyo aasahang makikilala pa rin ng model ang fault at hindi niya iyon ituring na normal?';
+  }
+
+  if (/esp32|microcontroller|api|cloud|internet|wifi|edge ai|latency/i.test(lower)) {
+    if (language === 'english') return 'Okay, but what happens at the exact moment the API or Wi-Fi goes down while the breaker condition is changing? Does the safety-critical part still decide locally, or does the system simply wait?';
+    if (language === 'tagalog') return 'Okay, pero ano ang mangyayari sa exact moment na mawalan ng API o Wi-Fi habang nagbabago ang condition ng breaker? Magde-decide pa rin ba locally ang safety-critical part, o maghihintay lang ang system?';
+    return 'Okay, pero ano ang mangyayari sa exact moment na mawalan ng API or Wi-Fi habang nagbabago ang condition ng breaker? Magde-decide pa rin ba locally ang safety-critical part, or maghihintay lang ang system?';
+  }
+
+  if (/deteriorat|abnormal|breaker|fault|failure|overheat|trip/i.test(lower)) {
+    if (language === 'english') return 'Okay, but you said you want to identify a breaker problem. How will you know the signal change came from the breaker itself and not simply from a heavier load producing the same waveform or temperature change?';
+    if (language === 'tagalog') return 'Okay, pero sinabi ninyo na gusto ninyong ma-identify ang breaker problem. Paano ninyo malalaman na galing talaga sa breaker ang signal change at hindi lang sa mas mabigat na load na puwedeng mag-produce ng parehong waveform o temperature change?';
+    return 'Okay, pero sinabi ninyo na gusto ninyong ma-identify ang breaker problem. Paano ninyo malalaman na galing talaga sa breaker ang signal change at hindi lang sa mas mabigat na load na puwedeng mag-produce ng parehong waveform or temperature change?';
+  }
+
+  const focus = answer.replace(/\\s+/g, ' ').slice(0, 180);
+  if (focus) {
+    if (language === 'english') return 'Okay, you said “' + focus + '.” But let’s say a normal operating condition produces the same result. What specifically in your method separates that from the fault you are claiming to detect?';
+    if (language === 'tagalog') return 'Okay, sinabi ninyo na “' + focus + '.” Pero paano kung may normal operating condition na puwedeng mag-produce ng parehong result? Ano mismo sa method ninyo ang naghihiwalay doon sa fault na gusto ninyong ma-detect?';
+    return 'Okay, sinabi ninyo na “' + focus + '.” Pero paano kung may normal operating condition na puwedeng mag-produce ng parehong result? Ano mismo sa method ninyo ang naghihiwalay doon sa fault na gusto ninyong ma-detect?';
+  }
+
+  return language === 'english'
+    ? 'Okay, let’s make this concrete. Suppose the same measurement can happen during normal operation. What would make your system call it a fault?'
+    : language === 'tagalog'
+      ? 'Okay, gawing concrete natin. Paano kung mangyari rin ang parehong measurement during normal operation? Ano ang magpapatawag sa system ninyo na fault iyon?'
+      : 'Okay, gawing concrete natin. Paano kung mangyari rin ang parehong measurement during normal operation? Ano ang magpapatawag sa system ninyo na fault iyon?';
 }
 
 export async function askPanel(payload = {}) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 9500);
+  const timer = setTimeout(() => controller.abort(), 10500);
   try {
     const response = await fetch('/api/defend-panel', {
       method: 'POST',
