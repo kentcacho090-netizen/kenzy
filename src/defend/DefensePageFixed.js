@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './DefensePage.css';
-import { askPanel, clientId, connectRoom, disconnectRoom, realtimeConfigured, sendEvent } from './realtime';
+import { askPanel, clientId, connectRoom, disconnectRoom, realtimeConfigured, sendEvent, updateRoomPresence } from './realtime';
 
 const OPENING_QUESTION = 'Before we begin, what is your thesis topic or title? Please state it clearly, and briefly explain what your study is trying to solve.';
 const THESIS_FALLBACK = 'Your thesis topic has not been provided yet.';
@@ -353,8 +353,8 @@ export default function DefensePage({ onBack }) {
         <aside className="defend-card defend-sidebar">
           <div className="defend-side-title">THESIS TEAM <span>{participants.length} online</span></div>
           {participants.map((person) => <div className={person.id === currentMember ? 'defend-member active' : 'defend-member'} key={person.id}><i>{initials(person.name)}</i><div><strong>{person.name}</strong><small>{person.id === currentMember ? 'ANSWERING NOW' : 'ONLINE'}</small></div></div>)}
-          <label>LANGUAGE<select value={language} onChange={async (e) => { const value = e.target.value; setLanguage(value); await sendEvent('settings', { language: value, style }); }}><option value="taglish">🇵🇭 Taglish</option><option value="tagalog">🇵🇭 Tagalog</option><option value="english">🇺🇸 English</option></select></label>
-          <label>STYLE<select value={style} onChange={async (e) => { const value = e.target.value; setStyle(value); await sendEvent('settings', { language, style: value }); }}><option value="aggressive">🔥 Aggressive</option><option value="balanced">⚖️ Balanced</option><option value="technical">🧠 Technical</option><option value="formal">🎓 Formal</option></select></label>
+          <label>LANGUAGE<select value={language} onChange={async (e) => { const value = e.target.value; setLanguage(value); await updateRoomPresence({ name, role: isCreator ? 'controller' : 'member', language: value, style }); }}><option value="taglish">🇵🇭 Taglish</option><option value="tagalog">🇵🇭 Tagalog</option><option value="english">🇺🇸 English</option></select></label>
+          <label>STYLE<select value={style} onChange={async (e) => { const value = e.target.value; setStyle(value); await updateRoomPresence({ name, role: isCreator ? 'controller' : 'member', language, style: value }); }}><option value="aggressive">🔥 Aggressive</option><option value="balanced">⚖️ Balanced</option><option value="technical">🧠 Technical</option><option value="formal">🎓 Formal</option></select></label>
           <div className="defend-topic-mini"><small>THESIS TOPIC</small><strong>{topic || THESIS_FALLBACK}</strong></div>
           <div className="defend-side-chat">
             <div className="defend-side-chat-head"><strong>TEAM CHAT</strong><span>AI BLIND</span></div>
