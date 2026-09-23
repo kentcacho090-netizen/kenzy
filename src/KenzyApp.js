@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './Kenzy.css';
+import DefensePage from './defend/DefensePage';
 
 const QUIZ_STORAGE = 'kenzy-quizzes-v4';
 const NOTES_STORAGE = 'kenzy-notes-v1';
@@ -154,7 +155,7 @@ function App() {
             onDelete={deleteNote}
           />
         )}
-        {page === 'applications' && <ApplicationsPage onBack={goHome} />}
+        {page === 'applications' && <ApplicationsPage onBack={goHome} />}\n        {page === 'defense' && <DefensePage onBack={goHome} />}
         {page === 'settings' && <SettingsPage theme={theme} setTheme={setTheme} onBack={goHome} />}
       </main>
 
@@ -191,7 +192,7 @@ function NavigationMenu({ page, navigate, onClose }) {
         {item('quiz-maker', '✦', 'Quiz Maker', 'Create quizzes from files')}
         {item('ai', '◉', 'AI Study Assistant', 'Ask Kenzy anything about studying')}
         {item('notes', '▤', 'Study Notes', 'Write and improve your notes')}
-        {item('applications', '⌘', 'Applications', 'Useful apps for studying')}
+        {item('applications', '⌘', 'Applications', 'Useful apps for studying')}\n        {item('defense', '◈', 'Defense Lab', 'Practice your thesis defense with AI')}
       </div>
       <div className="menu-section">
         <div className="menu-label">SETTINGS</div>
@@ -226,6 +227,7 @@ function HomePage({ quizzes, notes, navigate }) {
         <Feature icon="✦" title="Quiz Maker" text="Turn PDFs and images into timed multiple-choice practice." action="Open" onClick={() => navigate('quiz-maker')} />
         <Feature icon="◉" title="AI Study Assistant" text="Ask questions, explain topics, and get study guidance." action="Open" onClick={() => navigate('ai')} />
         <Feature icon="▤" title="Study Notes" text="Keep your notes organized and ask AI to improve them." action="Open" onClick={() => navigate('notes')} />
+        <Feature icon="◈" title="Defense Lab" text="Run a live group thesis defense with an AI panelist." action="Open" onClick={() => navigate('defense')} />
       </div>
 
       <div className="workspace-grid">
