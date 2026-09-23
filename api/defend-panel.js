@@ -232,7 +232,7 @@ module.exports = async function handler(req, res) {
             return send(res, 200, {
               question: String(result.question || fallbackQuestion({ topic, language: selectedLanguage, phase, latestAnswer, currentMember })).slice(0, 2000),
               nextMember,
-              topic: safeTopicValue(result.topic, topic),
+              topic: safeTopicValue(result.topic, topic || latestAnswer.slice(0, 500)),
               finish: false,
             });
           }
@@ -273,7 +273,7 @@ module.exports = async function handler(req, res) {
         currentMember: req.body?.currentMember,
       }),
       nextMember: String(req.body?.currentMember?.id || ''),
-      topic: safeTopicValue(req.body?.topic, ''),
+      topic: safeTopicValue(req.body?.topic, req.body?.latestAnswer || ''),
       finish: false,
       degraded: true,
     });
