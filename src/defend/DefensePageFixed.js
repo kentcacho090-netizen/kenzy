@@ -61,6 +61,8 @@ export default function DefensePage({ onBack }) {
   const [answer, setAnswer] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [panelClarification, setPanelClarification] = useState('');
+  const [clarifyBusy, setClarifyBusy] = useState(false);
   const [teamChat, setTeamChat] = useState([]);
   const [teamMessage, setTeamMessage] = useState('');
   const [error, setError] = useState('');
@@ -227,9 +229,56 @@ export default function DefensePage({ onBack }) {
     await sendEvent('team_chat', { message });
   }
 
+  function looksLikeClarification(text) {
+    const value = String(text || '').trim().toLowerCase();
+    return /(^|\\b)(what do you mean|what does that mean|what do you mean by|can you clarify|please clarify|clarify that|explain that|explain what|ano ibig sabihin|anong ibig sabihin|ibig sabihin ba|paki[- ]?explain|paki[- ]?clarify|pa[na]no ibig sabihin)(\\b|$)/i.test(value);
+  }
+
+  async function askPanelClarification(text) {
+    const message = String(text || '').trim();
+    if (!message || clarifyBusy || aiBusy) return;
+    setClarifyBusy(true);
+    setAiError('');
+    try {
+      const people = participants.length ? participants : [{ id: clientId, name, language, style }];
+      const result = await askPanel({
+        topic,
+        latestAnswer: '',
+        currentMember: { id: clientId, name, language, style },
+        members: people.map((p) => ({
+          id: p.id,
+          name: p.name,
+          language: p.language || language,
+          style: p.style || style,
+        })),
+        transcript,
+        language,
+        style,
+        phase: 'panel_chat',
+        userMessage: message,
+        panelChat: [{ question, userMessage: message }],
+      });
+      if (result.ok && result.reply) {
+        setPanelClarification(result.reply);
+      } else {
+        setAiError('The AI panel could not explain the question. Please try again.');
+      }
+    } catch {
+      setAiError('The AI panel could not explain the question. Please try again.');
+    } finally {
+      setClarifyBusy(false);
+    }
+  }
+
   async function submitAnswer() {
     const text = answer.trim();
-    if (!text || currentMember !== clientId || aiBusy) return;
+    if (!text || currentMember !== clientId || aiBusy || clarifyBusy) return;
+
+    if (looksLikeClarification(text)) {
+      setAnswer('');
+      await askPanelClarification(text);
+      return;
+    }
 
     const item = {
       id: crypto.randomUUID(),
@@ -374,12 +423,13 @@ export default function DefensePage({ onBack }) {
             {aiBusy && <div className="defend-ai-thinking"><span className="defend-thinking-dot"></span><div><strong>AI PANELIST IS THINKING</strong><small>Reviewing your answer, the thesis topic, and the group's previous answers before responding.</small></div></div>}
             <h1>{question || openingQuestion(language)}</h1>
             <div className="defend-attack"><b>{aiBusy ? 'ANALYZING' : 'ADAPTIVE ATTACK'}</b><span>{aiBusy ? 'The panel is analyzing the latest answer and the full group transcript before choosing what to say next.' : 'The panel uses the group’s previous answers to target unsupported claims, contradictions, and methodology gaps.'}</span></div>
+            {panelClarification && <div className="defend-panel-clarification"><small>AI PANEL CLARIFICATION</small><p>{panelClarification}</p></div>}
           </section>
           <section className="defend-answer defend-card">
             <div><small>ANSWERING</small><strong>{currentName}</strong></div>
             <span className="defend-turn">{currentMember === clientId ? 'YOUR TURN' : 'WATCHING'}</span>
             <textarea disabled={currentMember !== clientId || aiBusy} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={currentMember === clientId ? 'Your answer is shared with everyone in the room…' : 'Wait for your turn…'} />
-            <button className="defend-primary wide" disabled={currentMember !== clientId || !answer.trim() || aiBusy} onClick={submitAnswer}>{aiBusy ? 'AI is analyzing…' : 'Submit to AI panel →'}</button>
+            <button className="defend-primary wide" disabled={currentMember !== clientId || !answer.trim() || aiBusy || clarifyBusy} onClick={submitAnswer}>{aiBusy ? 'AI is analyzing…' : clarifyBusy ? 'AI is explaining…' : 'Submit to AI panel →'}</button>
             {aiError && <div className="defend-error">{aiError}</div>}
           </section>
           <section className="defend-feed defend-card">
