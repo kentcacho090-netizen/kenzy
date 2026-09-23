@@ -28,6 +28,20 @@ function memberName(people, id, fallbackName) {
   return people.find((p) => p.id === id)?.name || (id === clientId ? fallbackName : 'Member');
 }
 
+function compactTopic(value) {
+  const raw = String(value || '').replace(/\\s+/g, ' ').trim();
+  if (!raw) return '';
+  const cleaned = raw
+    .replace(/^(?:our\\s+)?(?:thesis\\s+)?(?:topic|title)\\s*(?:is|:|-)?\\s*/i, '')
+    .trim();
+  const first = cleaned.split(/(?<=[.!?])\\s+/)[0].trim();
+  if (first.length <= 180 && !/^(?:our study|the study|we aim|our objective|the problem|this study)\\b/i.test(first)) {
+    return first.replace(/[.!?]+$/, '');
+  }
+  const compact = cleaned.split(/\\s+(?:our study|the study|we aim|our objective|the problem|this study)\\b/i)[0].trim();
+  return (compact || first || cleaned).replace(/[.!?]+$/, '').slice(0, 180);
+}
+
 function ExitConfirm({ onCancel, onConfirm }) {
   return (
     <div className="defend-exit-overlay" role="dialog" aria-modal="true" aria-labelledby="defend-exit-title">
@@ -284,6 +298,7 @@ export default function DefensePage({ onBack }) {
     const item = {
       id: crypto.randomUUID(),
       member: clientId,
+      question,
       answer: text,
       createdAt: new Date().toISOString(),
     };
@@ -318,7 +333,7 @@ export default function DefensePage({ onBack }) {
       return;
     }
 
-    if (result.topic) setTopic(result.topic);
+    if (result.topic) setTopic(compactTopic(result.topic));
     // DEFEND is intentionally continuous: every answer produces another attack.
     // There is no "finished" state during the live defense.
     const nextMember = people.some((p) => p.id === result.nextMember)
@@ -328,14 +343,14 @@ export default function DefensePage({ onBack }) {
 
     setCurrentMember(nextMember);
     setQuestion(nextQuestion);
-    setTopic(result.topic || topic);
+    setTopic(compactTopic(result.topic || topic));
     setAiBusy(false);
 
     await sendEvent('answer', {
       answer: item,
       nextMember,
       nextQuestion,
-      topic: result.topic || topic,
+      topic: compactTopic(result.topic || topic),
     });
   }
 
