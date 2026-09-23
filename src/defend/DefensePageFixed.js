@@ -84,6 +84,7 @@ export default function DefensePage({ onBack }) {
         language,
         style,
         panelChat,
+        teamChat,
         started: Boolean(question),
       });
     } else if (event.event === 'snapshot' && !isCreator) {
@@ -94,6 +95,7 @@ export default function DefensePage({ onBack }) {
       setLanguage(event.language || 'taglish');
       setStyle(event.style || 'aggressive');
       setPanelChat(event.panelChat || []);
+      setTeamChat(event.teamChat || []);
       if (event.started) setScreen('room');
       else setScreen('lobby');
     } else if (event.event === 'start') {
