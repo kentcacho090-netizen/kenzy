@@ -77,6 +77,7 @@ export default function DefensePage({ onBack }) {
   const [aiThinkingStage, setAiThinkingStage] = useState(0);
   const [aiError, setAiError] = useState('');
   const [panelClarification, setPanelClarification] = useState('');
+  const [answerFeedback, setAnswerFeedback] = useState('');
   const [clarifyBusy, setClarifyBusy] = useState(false);
   const [teamChat, setTeamChat] = useState([]);
   const [teamMessage, setTeamMessage] = useState('');
@@ -102,6 +103,7 @@ export default function DefensePage({ onBack }) {
     setAiBusy(false);
     setAiThinkingStage(0);
     setAiError('');
+    setAnswerFeedback('');
     setError('');
     setRoom('');
     setScreen('home');
@@ -182,6 +184,11 @@ export default function DefensePage({ onBack }) {
       setTopic(event.topic || topic);
       setAiBusy(false);
       setAiError('');
+      setAnswerFeedback('');
+    } else if (event.event === 'answer_rejected') {
+      setAnswerFeedback(event.feedback || 'Please answer the current panel question directly.');
+      setAiBusy(false);
+      setAiError('');
     } else if (event.event === 'team_chat') {
       setTeamChat((items) => items.some((item) => item.id === event.message?.id) ? items : [...items, event.message]);
     } else if (event.event === 'settings') {
@@ -221,6 +228,7 @@ export default function DefensePage({ onBack }) {
     setTranscript([]);
     setQuestion('');
     setTopic('');
+    setAnswerFeedback('');
     setCurrentMember(clientId);
     setScreen('lobby');
     setError('');
@@ -235,6 +243,7 @@ export default function DefensePage({ onBack }) {
     const opening = openingQuestion(participants[0]?.language || language);
     setCurrentMember(first);
     setQuestion(opening);
+    setAnswerFeedback('');
     setScreen('room');
     await sendEvent('start', {
       currentMember: first,
@@ -317,10 +326,9 @@ export default function DefensePage({ onBack }) {
     };
 
     const nextTranscript = [...transcript, item];
-    setTranscript(nextTranscript);
-    setAnswer('');
     setAiBusy(true);
     setAiError('');
+    setAnswerFeedback('');
 
     const people = participants.length ? participants : [{ id: clientId, name, language, style }];
     const result = await askPanel({
@@ -346,8 +354,20 @@ export default function DefensePage({ onBack }) {
       return;
     }
 
+    if (result.needsClarification) {
+      const feedback = result.feedback || 'Please answer the current panel question directly.';
+      setAiBusy(false);
+      setAnswerFeedback(feedback);
+      await sendEvent('answer_rejected', { member: clientId, feedback });
+      return;
+    }
+
     if (result.topic) setTopic(compactTopic(result.topic));
-    // DEFEND is intentionally continuous: every answer produces another attack.
+    // The answer enters shared history only after it passes the panel's answer gate.
+    setTranscript(nextTranscript);
+    setAnswer('');
+    setAnswerFeedback('');
+    // DEFEND is intentionally continuous: every accepted answer produces another attack.
     // There is no "finished" state during the live defense.
     const nextMember = people.some((p) => p.id === result.nextMember)
       ? result.nextMember
@@ -452,13 +472,14 @@ export default function DefensePage({ onBack }) {
             <div className="defend-panel-meta">● AI PANELIST · {language.toUpperCase()} <em>{aiBusy ? 'Thinking about what to ask next…' : 'Listening to the entire defense'}</em></div>
             {aiBusy && <div className="defend-ai-thinking"><span className="defend-thinking-dot"></span><div><strong>AI PANELIST IS THINKING</strong><small>{['Reading your answer and the question it responds to…','Finding the specific weak point or contradiction…','Building the next attack from your actual defense…'][aiThinkingStage]}</small></div></div>}
             <h1>{question || openingQuestion(language)}</h1>
+            {answerFeedback && <div className="defend-panel-clarification"><small>ANSWER NEEDS CLARIFICATION</small><p>{answerFeedback}</p></div>}
             <div className="defend-attack"><b>{aiBusy ? 'ANALYZING' : 'ADAPTIVE ATTACK'}</b><span>{aiBusy ? 'The panel is analyzing the latest answer and the full group transcript before choosing what to say next.' : 'The panel uses the group’s previous answers to target unsupported claims, contradictions, and methodology gaps.'}</span></div>
             {panelClarification && <div className="defend-panel-clarification"><small>AI PANEL CLARIFICATION</small><p>{panelClarification}</p></div>}
           </section>
           <section className="defend-answer defend-card">
             <div><small>ANSWERING</small><strong>{currentName}</strong></div>
             <span className="defend-turn">{currentMember === clientId ? 'YOUR TURN' : 'WATCHING'}</span>
-            <textarea disabled={currentMember !== clientId || aiBusy} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={currentMember === clientId ? 'Your answer is shared with everyone in the room…' : 'Wait for your turn…'} />
+            <textarea disabled={currentMember !== clientId || aiBusy} value={answer} onChange={(e) => { setAnswer(e.target.value); if (answerFeedback) setAnswerFeedback(''); }} placeholder={currentMember === clientId ? 'Your answer is shared with everyone in the room after the panel accepts it…' : 'Wait for your turn…'} />
             <button className="defend-primary wide" disabled={currentMember !== clientId || !answer.trim() || aiBusy || clarifyBusy} onClick={submitAnswer}>{aiBusy ? 'AI is analyzing…' : clarifyBusy ? 'AI is explaining…' : 'Submit to AI panel →'}</button>
             {aiError && <div className="defend-error">{aiError}</div>}
           </section>

@@ -13,6 +13,10 @@ LANGUAGE:
 - Do not use awkward literal translations.
 
 DEFENSE BEHAVIOR:
+- ANSWER GATE: Before attacking, judge whether the latest answer actually addresses the CURRENT PANEL QUESTION. During topic_intake, it must provide a recognizable thesis topic/title or a meaningful explanation of the study.
+- Mark an answer relevant when it addresses the question, partial when it addresses it but omits needed detail, unrelated when it does not answer the question, and incoherent when it is gibberish or unintelligible.
+- If the answer is unrelated or incoherent, do not treat it as a claim, do not quote or interpret it, do not invent a meaning for it, do not update the topic, and do not advance to another member or question. Return answerStatus as unrelated or incoherent and leave the attack fields/question empty.
+- A short but meaningful answer may still be relevant. Do not reject an answer only because it is brief.
 - In topic_intake, ask for the thesis topic/title and a brief explanation of what the study solves.
 - The topic is DATA, not a script. Never assume the example thesis, sample domain, or any previous user's topic applies to the current room. Only use technical details that the current group actually provided.
 - Do not copy or echo the full thesis title into defense questions. Use only the specific concept from the latest answer that matters to the attack.
@@ -76,101 +80,32 @@ function cleanLanguage(value) {
   return v === 'tagalog' ? 'tagalog' : v === 'english' ? 'english' : 'taglish';
 }
 
-function fallbackQuestion({ topic, language, phase, latestAnswer, currentQuestion, currentMember }) {
-  const answer = String(latestAnswer || '').replace(/\s+/g, ' ').trim();
-  const previous = String(currentQuestion || '').replace(/\s+/g, ' ').trim();
-
-  if (phase === 'topic_intake') {
-    if (language === 'tagalog') {
-      return 'Sige. Ngayon, ano mismo ang problemang sinosolusyonan ng study ninyo, at ano ang pangunahing paraan na gagamitin ninyo para ma-address iyon?';
-    }
-    if (language === 'english') {
-      return 'Good. Now, what exact problem does your study address, and what is the main approach you will use to address it?';
-    }
-    return 'Okay. Ngayon, ano mismo ang problem na ina-address ng study ninyo, at ano ang main approach na gagamitin ninyo para ma-address iyon?';
-  }
-
-  if (!answer) {
-    if (language === 'tagalog') return 'Wait lang. Hindi ko pa nakuha ang sagot ninyo. Paki-clarify muna yung specific point na tinatanong ko.';
-    if (language === 'english') return 'Wait. I did not get a usable answer to that point. Clarify the specific part I asked about.';
-    return 'Wait lang. Hindi ko pa nakuha nang malinaw yung sagot ninyo. I-clarify muna yung specific point na tinatanong ko.';
-  }
-
-  // The fallback is intentionally thesis-agnostic. It uses the student's actual
-  // words and the previous panel question rather than any built-in sample thesis.
-  const claim = answer.slice(0, 240);
-  const lower = answer.toLowerCase();
-
-  if (/because|dahil|kasi|since|therefore|so that|para|which means|ibig sabihin|meaning/i.test(lower)) {
-    if (language === 'english') {
-      return 'Okay, I understand the reasoning you gave. But what if the same result happens for a different reason? What specific observation would let you distinguish your explanation from that alternative?';
-    }
-    if (language === 'tagalog') {
-      return 'Okay, gets ko yung reasoning ninyo. Pero paano kung mangyari rin ang parehong result dahil sa ibang dahilan? Anong specific observation ang maghihiwalay sa explanation ninyo sa alternative na iyon?';
-    }
-    return 'Okay, gets ko yung reasoning ninyo. Pero what if mangyari rin yung same result dahil sa ibang dahilan? Anong specific observation ang maghihiwalay sa explanation ninyo sa alternative na iyon?';
-  }
-
-  if (/accuracy|accurate|effective|reliable|successful|works|improve|better|efficient|performance/i.test(lower)) {
-    if (language === 'english') {
-      return 'You just said the method works well. Let’s say it works on the cases you tested but fails on a case that looks slightly different. What test would reveal that limitation before you claim the method is reliable?';
-    }
-    if (language === 'tagalog') {
-      return 'Sinabi ninyo na effective o reliable yung method. Pero paano kung gumana siya sa mga na-test ninyo tapos bumagsak sa isang slightly different case? Anong test ang magre-reveal ng limitation na iyon bago ninyo sabihing reliable siya?';
-    }
-    return 'Sinabi ninyo na effective or reliable yung method. Pero paano kung gumana sa mga na-test ninyo pero bumagsak sa slightly different case? Anong test ang magre-reveal ng limitation na iyon bago ninyo sabihing reliable siya?';
-  }
-
-  if (/predict|prediction|forecast|before|early warning|future/i.test(lower) || /predict|forecast|early warning/i.test(previous.toLowerCase())) {
-    if (language === 'english') {
-      return 'Wait. You are saying the system knows something before the event. What evidence shows that the information genuinely appears early, rather than the system reacting to a change that has already started?';
-    }
-    if (language === 'tagalog') {
-      return 'Wait lang. Sinasabi ninyo na may nalalaman ang system bago mangyari ang event. Anong evidence ang magpapakitang nauuna talaga yung information, at hindi lang nagre-react ang system sa change na nagsimula na?';
-    }
-    return 'Wait lang. Sinasabi ninyo na may nalalaman ang system before the event. Anong evidence ang magpapakitang nauuna talaga yung information, at hindi lang nagre-react ang system sa change na nagsimula na?';
-  }
-
-  if (/dataset|data|sample|respondent|participant|training|model|ai|machine learning|algorithm/i.test(lower)) {
-    if (language === 'english') {
-      return 'Okay, but your result depends on the data. What if a new case has the same important characteristics but was not represented in your data? What would make you trust the method on that unseen case?';
-    }
-    if (language === 'tagalog') {
-      return 'Okay, pero naka-depend yung result ninyo sa data. Paano kung may bagong case na may parehong important characteristics pero wala sa data ninyo? Ano ang magiging basis ninyo para pagkatiwalaan yung method sa unseen case na iyon?';
-    }
-    return 'Okay, pero naka-depend yung result ninyo sa data. What if may bagong case na may same important characteristics pero wala sa data ninyo? Ano ang basis ninyo para pagkatiwalaan yung method sa unseen case na iyon?';
-  }
-
-  if (/sensor|measurement|measure|signal|reading|value|temperature|voltage|current|waveform|image|feature|parameter/i.test(lower)) {
-    if (language === 'english') {
-      return 'You are relying on that measurement. But what if another normal condition changes the same measurement? What in your method separates the condition you care about from that ordinary change?';
-    }
-    if (language === 'tagalog') {
-      return 'Umaasa kayo sa measurement na iyan. Pero paano kung may ibang normal condition na nagbabago rin ng parehong measurement? Ano sa method ninyo ang maghihiwalay sa condition na hinahanap ninyo sa normal change na iyon?';
-    }
-    return 'Umaasa kayo sa measurement na iyan. Pero what if may ibang normal condition na nagbabago rin ng same measurement? Ano sa method ninyo ang maghihiwalay sa condition na hinahanap ninyo sa normal change na iyon?';
-  }
-
-  if (/esp32|arduino|microcontroller|api|server|cloud|wifi|internet|latency|hardware|software/i.test(lower)) {
-    if (language === 'english') {
-      return 'Okay, but that part of the system can fail too. If it becomes unavailable at the exact moment your system needs it, what happens to the decision and what evidence shows the rest of your system still behaves correctly?';
-    }
-    if (language === 'tagalog') {
-      return 'Okay, pero puwede ring mag-fail yung part na iyan. Kung mawala o mag-fail siya exactly when kailangan ng system, ano ang mangyayari sa decision at paano ninyo mapapatunayang tama pa rin ang behavior ng natitirang system?';
-    }
-    return 'Okay, pero puwede ring mag-fail yung part na iyan. What if mawala or mag-fail siya exactly when kailangan ng system? Ano ang mangyayari sa decision at paano ninyo mapapatunayang tama pa rin ang behavior ng rest ng system?';
-  }
-
-  // Final fallback: quote the student's own claim and introduce one concrete
-  // alternative explanation. It never inserts a sample thesis/domain.
-  if (language === 'english') {
-    return 'You said, "' + claim + '". Okay, but suppose a different cause produces the same outcome. What specific test would let you tell your explanation apart from that alternative?';
-  }
-  if (language === 'tagalog') {
-    return 'Sinabi ninyo, "' + claim + '". Okay, pero paano kung ibang dahilan ang mag-produce ng parehong outcome? Anong specific test ang maghihiwalay sa explanation ninyo sa alternative na iyon?';
-  }
-  return 'Sinabi ninyo, "' + claim + '". Okay, pero paano kung ibang dahilan ang mag-produce ng parehong outcome? Anong specific test ang maghihiwalay sa explanation ninyo sa alternative na iyon?';
+function isObviousNonAnswer(value) {
+  const normalized = normalizeForCompare(value);
+  if (!normalized) return true;
+  const compact = normalized.replace(/\\s/g, '');
+  // Catch keyboard spam such as "aa" without rejecting short meaningful replies
+  // like "yes", "no", "oo", or "opo".
+  return compact.length <= 3 && /^(.)\\1+$/.test(compact);
 }
+
+function answerFeedback(language, phase, unavailable = false) {
+  const selected = cleanLanguage(language);
+  if (unavailable) {
+    if (selected === 'english') return 'I could not evaluate that response reliably because the AI panel is temporarily unavailable. Your turn has not advanced; please submit again.';
+    if (selected === 'tagalog') return 'Hindi ko ma-assess nang maayos ang sagot dahil pansamantalang hindi available ang AI panel. Hindi pa uusad ang turn ninyo; paki-submit muli.';
+    return 'Hindi ko ma-assess nang maayos yung sagot dahil temporarily unavailable ang AI panel. Hindi pa uusad yung turn ninyo; paki-submit ulit.';
+  }
+  if (phase === 'topic_intake') {
+    if (selected === 'english') return 'I still need a clear thesis topic or title and a brief explanation of the problem your study addresses. Please provide those directly.';
+    if (selected === 'tagalog') return 'Kailangan ko pa ng malinaw na thesis topic o title at maikling paliwanag sa problemang tinutugunan ng study ninyo. Ibigay muna ang mga iyon.';
+    return 'Kailangan ko pa ng malinaw na thesis topic or title at maikling paliwanag kung anong problem ang ina-address ng study ninyo. Ibigay muna iyon.';
+  }
+  if (selected === 'english') return 'That does not address the question I asked. Please answer the question above directly; we will stay on this question until it is answered.';
+  if (selected === 'tagalog') return 'Hindi nito nasagot ang tanong ko. Sagutin muna nang direkta ang tanong sa itaas; mananatili tayo sa tanong na ito hanggang masagot ninyo.';
+  return 'Hindi pa nito nasasagot yung tanong ko. Please answer the question above directly; dito muna tayo hanggang malinaw ang sagot.';
+}
+
 function safeTopicValue(value, fallback) {
   return String(value || fallback || '').trim().slice(0, 1000);
 }
@@ -331,6 +266,16 @@ module.exports = async function handler(req, res) {
       currentMember?.language || language
     );
 
+    if (phase !== 'panel_chat' && isObviousNonAnswer(latestAnswer)) {
+      return send(res, 200, {
+        needsClarification: true,
+        feedback: answerFeedback(selectedLanguage, phase),
+        nextMember: String(currentMember?.id || ''),
+        topic: phase === 'topic_intake' ? '' : extractTopic(topic, topic),
+        finish: false,
+      });
+    }
+
     const normalizedMembers = (Array.isArray(members) ? members : []).map((m) => ({
       id: String(m?.id || ''),
       name: String(m?.name || 'Member').slice(0, 80),
@@ -370,7 +315,8 @@ module.exports = async function handler(req, res) {
     const defenseSchema = {
       type: 'OBJECT',
       properties: {
-        attackTarget: { type: 'STRING', description: 'Private concise note: the exact claim/detail from the latest answer that the panel is attacking.' },
+        answerStatus: { type: 'STRING', enum: ['relevant', 'partial', 'unrelated', 'incoherent'], description: 'Whether the latest answer actually addresses the current panel question. Use unrelated or incoherent for random or off-topic input.' },
+        attackTarget: { type: 'STRING', description: 'Private concise note: the exact claim/detail from the latest answer that the panel is attacking; empty when the answer is unrelated or incoherent.' },
         attackVulnerability: { type: 'STRING', description: 'Private concise note: the concrete technical/logical weakness the panel identified.' },
         responseAssessment: { type: 'STRING', description: 'Private concise note: weak, partial, strong, contradictory, unclear, or other brief assessment of the latest answer.' },
         escalation: { type: 'STRING', description: 'Private concise note: what the panel will pressure next if the student answers this question.' },
@@ -379,7 +325,7 @@ module.exports = async function handler(req, res) {
         topic: { type: 'STRING' },
         finish: { type: 'BOOLEAN' },
       },
-      required: ['attackTarget', 'attackVulnerability', 'responseAssessment', 'escalation', 'question', 'nextMember', 'topic', 'finish'],
+      required: ['answerStatus', 'attackTarget', 'attackVulnerability', 'responseAssessment', 'escalation', 'question', 'nextMember', 'topic', 'finish'],
     };
     const clarificationSchema = {
       type: 'OBJECT',
@@ -413,6 +359,11 @@ module.exports = async function handler(req, res) {
       const basePrompt = [
         'You are the live thesis-defense panelist. Think through the answer before writing the question.',
         'The latest student answer is the PRIMARY evidence. Do not generate from the thesis title alone.',
+        'First classify whether the answer actually addresses the current question: relevant, partial, unrelated, or incoherent.',
+        'A relevant answer addresses the question; a partial answer addresses it but leaves a specific gap; unrelated does not answer it; incoherent is gibberish or unintelligible.',
+        'For unrelated or incoherent answers, set answerStatus accordingly and leave attackTarget, attackVulnerability, responseAssessment, escalation, and question empty. Do not quote, praise, rationalize, or invent meaning for the text.',
+        'Do not advance the defense for unrelated or incoherent input. The app will keep the same member and ask for a direct answer.',
+        'Do not confuse a weak but on-topic answer with an unrelated answer. A weak or partial defense should still be challenged.',
         'First internally identify what the student actually said.',
         'Then privately fill four short planning fields: attackTarget (exact claim/detail), attackVulnerability (concrete weakness), responseAssessment (weak/partial/strong/contradictory/unclear), and escalation (what deeper pressure follows). These are internal control data; they are not shown to the student.',
         'Then write ONE question that attacks that exact point.',
@@ -454,6 +405,17 @@ module.exports = async function handler(req, res) {
               reply: String(result.reply || 'Let me clarify what I mean by that question.').slice(0, 3000),
               question: '',
               topic: extractTopic(result.topic || topic, latestAnswer),
+              finish: false,
+            });
+          }
+
+          const answerStatus = String(result.answerStatus || '').toLowerCase();
+          if (!['relevant', 'partial'].includes(answerStatus)) {
+            return send(res, 200, {
+              needsClarification: true,
+              feedback: answerFeedback(selectedLanguage, phase),
+              nextMember: String(currentMember?.id || normalizedMembers?.[0]?.id || ''),
+              topic: phase === 'topic_intake' ? '' : extractTopic(topic, topic),
               finish: false,
             });
           }
@@ -523,7 +485,9 @@ module.exports = async function handler(req, res) {
           }
 
           if (!nextQuestion || isGenericOrRepeatedQuestion(nextQuestion, currentQuestion, topic)) {
-            nextQuestion = fallbackQuestion({ topic, language: selectedLanguage, phase, latestAnswer, currentQuestion, currentMember });
+            return send(res, 503, {
+              error: 'The AI panel could not create a grounded follow-up. Your answer was not accepted; please try submitting again.',
+            });
           }
 
           return send(res, 200, {
@@ -546,40 +510,14 @@ module.exports = async function handler(req, res) {
       if (lastStatus >= 400 && lastStatus < 500 && lastStatus !== 408 && lastStatus !== 429) break;
     }
 
-    // The defense must never dead-end because a provider temporarily fails.
-    // Continue with a deterministic panel follow-up instead of exposing provider
-    // errors or leaving the student with a frozen submit state.
-    return send(res, 200, {
-      question: fallbackQuestion({
-        topic,
-        language: selectedLanguage,
-        phase,
-        latestAnswer,
-        currentQuestion,
-        currentMember,
-      }),
-      nextMember: String(currentMember?.id || normalizedMembers?.[0]?.id || ''),
-      topic: phase === 'topic_intake' ? extractTopic(latestAnswer, topic) : extractTopic(topic, latestAnswer),
-      finish: false,
-      degraded: true,
-      providerStatus: lastStatus,
+    // Never invent a panel attack when the model is unavailable. Keep the turn
+    // pending so the student can retry without losing or sharing their answer.
+    return send(res, 503, {
+      error: 'The AI panel is temporarily unavailable. Your answer was not accepted; please retry.',
     });
   } catch {
-    return send(res, 200, {
-      question: fallbackQuestion({
-        topic: req.body?.topic,
-        language: cleanLanguage(req.body?.language),
-        phase: req.body?.phase,
-        latestAnswer: req.body?.latestAnswer,
-        currentQuestion: req.body?.currentQuestion,
-        currentMember: req.body?.currentMember,
-      }),
-      nextMember: String(req.body?.currentMember?.id || ''),
-      topic: req.body?.phase === 'topic_intake'
-        ? extractTopic(req.body?.latestAnswer, req.body?.topic)
-        : extractTopic(req.body?.topic, req.body?.latestAnswer),
-      finish: false,
-      degraded: true,
+    return send(res, 503, {
+      error: 'The AI panel could not evaluate the answer. Your turn was not advanced; please try again.',
     });
   }
 };
