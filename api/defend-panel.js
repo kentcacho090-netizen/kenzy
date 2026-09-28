@@ -55,6 +55,7 @@ DEFENSE BEHAVIOR:
 
 Return ONLY JSON:
 {
+  "answerStatus": "relevant",
   "question": "next panel question",
   "nextMember": "exact member id",
   "topic": "best current thesis topic/title",
@@ -83,10 +84,11 @@ function cleanLanguage(value) {
 function isObviousNonAnswer(value) {
   const normalized = normalizeForCompare(value);
   if (!normalized) return true;
-  const compact = normalized.replace(/\\s/g, '');
+  const compact = normalized.split(' ').join('');
   // Catch keyboard spam such as "aa" without rejecting short meaningful replies
   // like "yes", "no", "oo", or "opo".
-  return compact.length <= 3 && /^(.)\\1+$/.test(compact);
+  return compact.length >= 2 && compact.length <= 3
+    && Array.from(compact).every((character) => character === compact[0]);
 }
 
 function answerFeedback(language, phase, unavailable = false) {
